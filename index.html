@@ -135,8 +135,8 @@ td{padding:8px 10px}
 #tperf tbody td.enr{text-align:center;color:var(--mu);font-size:.67rem}
 #tperf .phase-cell{font-size:.65rem;color:var(--mu);max-width:80px;white-space:normal;line-height:1.3}
 /* Grade block column separators in all-grades view */
-#tperf td:nth-child(10),#tperf th:nth-child(10),
-#tperf td:nth-child(18),#tperf th:nth-child(18){border-right:2px solid rgba(255,255,255,.3)}
+#tperf td:nth-child(12),#tperf th:nth-child(12),
+#tperf td:nth-child(22),#tperf th:nth-child(22){border-right:2px solid rgba(255,255,255,.3)}
 
 /* ── PROVINCIAL RANKING TABLE ── */
 .rank-tbl{width:100%;border-collapse:collapse;font-size:.78rem}
@@ -1685,7 +1685,7 @@ function renderOverviewCharts(year = '2025'){
   renderQuintileCharts();
 }
 
-/* ── SYSTEMIC PERFORMANCE TABLE (WITH PROV DEV% COLUMN) ── */
+/* ── SYSTEMIC PERFORMANCE TABLE (WITH PROV DEV% AND DIS DEV% COLUMNS) ── */
 function getPhase(name){
   const up = (name||'').toUpperCase().trim();
   for(const [k,v] of Object.entries(PHASE_LOOKUP)){
@@ -1736,7 +1736,7 @@ function renderPerfTable(year='2025', gradeStr=''){
   const pool = FLT.filter(s => !csel || s.circuit === csel);
 
   if(gradeStr){
-    // ── SINGLE GRADE VIEW (with Prov DEV% column) ──
+    // ── SINGLE GRADE VIEW (with Dis DEV% and Prov DEV% columns) ──
     const grade = parseInt(gradeStr,10);
     if(titleEl) titleEl.textContent = `${y2} Systemic Performance: ${districtLabel.toUpperCase()} — Grade ${grade}`;
 
@@ -1747,8 +1747,8 @@ function renderPerfTable(year='2025', gradeStr=''){
         <th rowspan="2">PHASE</th>
         <th colspan="3" class="th-section" style="text-align:center">ENROLMENT</th>
         <th rowspan="2">SCHOOL NAME</th>
-        <th colspan="5" class="th-math" style="text-align:center">MATHEMATICS</th>
-        <th colspan="5" class="th-lang" style="text-align:center">LANGUAGE</th>
+        <th colspan="6" class="th-math" style="text-align:center">MATHEMATICS</th>
+        <th colspan="6" class="th-lang" style="text-align:center">LANGUAGE</th>
       </tr>
       <tr>
         <th class="th-section">GR3</th>
@@ -1758,11 +1758,13 @@ function renderPerfTable(year='2025', gradeStr=''){
         <th class="th-math">${y1}</th>
         <th class="th-math">${y2}</th>
         <th class="th-math">DEV</th>
+        <th class="th-math">Dis DEV%</th>
         <th class="th-math">Prov DEV%</th>
         <th class="th-lang">${y0}</th>
         <th class="th-lang">${y1}</th>
         <th class="th-lang">${y2}</th>
         <th class="th-lang">DEV</th>
+        <th class="th-lang">Dis DEV%</th>
         <th class="th-lang">Prov DEV%</th>
       </tr>
     `;
@@ -1773,6 +1775,13 @@ function renderPerfTable(year='2025', gradeStr=''){
       return ca!==cb ? ca-cb : (a.name||'').localeCompare(b.name||'');
     });
     let prevCir=null;
+    
+    // Get district benchmark for this grade and subject
+    const districtMath = getLockedDistrictPass(districtLabel, year, 'math', [grade]);
+    const districtLang = getLockedDistrictPass(districtLabel, year, 'lang', [grade]);
+    const districtMathPass = districtMath ? districtMath.pass : null;
+    const districtLangPass = districtLang ? districtLang.pass : null;
+    
     const rows = sorted.map(s=>{
       const cir=cirNum(s.circuit), isNew=cir!==prevCir; prevCir=cir;
       const phase=getPhase(s.name), enrol=getEnrol(s.name);
@@ -1781,11 +1790,13 @@ function renderPerfTable(year='2025', gradeStr=''){
       const mDev=(nn(m24)&&nn(m25))?+((m25-m24).toFixed(1)):null;
       const mProv = getProvincePass([grade], 'math', year);
       const mProvDev = (nn(m25) && nn(mProv)) ? +((m25 - mProv).toFixed(1)) : null;
+      const mDisDev = (nn(m25) && nn(districtMathPass)) ? +((m25 - districtMathPass).toFixed(1)) : null;
       
       const l23=s.lTrend?.pass?.[2023]??null, l24=s.lTrend?.pass?.[2024]??null, l25=s.lTrend?.pass?.[2025]??s.lang_.pass;
       const lDev=(nn(l24)&&nn(l25))?+((l25-l24).toFixed(1)):null;
       const lProv = getProvincePass([grade], 'lang', year);
       const lProvDev = (nn(l25) && nn(lProv)) ? +((l25 - lProv).toFixed(1)) : null;
+      const lDisDev = (nn(l25) && nn(districtLangPass)) ? +((l25 - districtLangPass).toFixed(1)) : null;
       
       return `<tr class="${isNew?'cir-group-start':''}">
         <td class="cir-cell">${cir}</td>
@@ -1798,22 +1809,24 @@ function renderPerfTable(year='2025', gradeStr=''){
         <td class="num">${fv(m24)}</td>
         <td class="num">${fv(m25)}</td>
         <td class="num">${fd(mDev)}</td>
+        <td class="num">${fd(mDisDev)}</td>
         <td class="num">${fd(mProvDev)}</td>
         <td class="num">${fv(l23)}</td>
         <td class="num">${fv(l24)}</td>
         <td class="num">${fv(l25)}</td>
         <td class="num">${fd(lDev)}</td>
+        <td class="num">${fd(lDisDev)}</td>
         <td class="num">${fd(lProvDev)}</td>
       </tr>`;
     }).join('');
     const tbody = document.getElementById('tperf-body');
-    if(tbody) tbody.innerHTML = rows || '<tr><td colspan="16" style="text-align:center;padding:2rem;color:var(--mu)">No data for this grade</td></tr>';
+    if(tbody) tbody.innerHTML = rows || '<tr><td colspan="18" style="text-align:center;padding:2rem;color:var(--mu)">No data for this grade</td></tr>';
 
   } else {
-    // ── ALL GRADES VIEW (with Prov DEV% columns) ──
+    // ── ALL GRADES VIEW (with Dis DEV% and Prov DEV% columns) ──
     if(titleEl) titleEl.textContent = `${y2} Systemic Performance: ${districtLabel.toUpperCase()} — All Grades`;
 
-    // Build 3-row header for all grades view with Prov DEV% columns
+    // Build 3-row header for all grades view with Dis DEV% and Prov DEV% columns
     const thead = document.querySelector('#tperf thead');
     thead.innerHTML = `
       <tr>
@@ -1821,17 +1834,17 @@ function renderPerfTable(year='2025', gradeStr=''){
         <th rowspan="3" style="vertical-align:middle">PHASE</th>
         <th colspan="3" class="th-section" rowspan="2" style="text-align:center;vertical-align:middle">ENROLMENT</th>
         <th rowspan="3" style="vertical-align:middle">SCHOOL NAME</th>
-        <th colspan="10" class="th-math" style="text-align:center">GRADE 3</th>
-        <th colspan="10" style="text-align:center;background:#1b5c8a">GRADE 6</th>
-        <th colspan="10" style="text-align:center;background:#0d4f3c">GRADE 9</th>
+        <th colspan="12" class="th-math" style="text-align:center">GRADE 3</th>
+        <th colspan="12" style="text-align:center;background:#1b5c8a">GRADE 6</th>
+        <th colspan="12" style="text-align:center;background:#0d4f3c">GRADE 9</th>
       </tr>
       <tr>
-        <th colspan="5" class="th-math" style="text-align:center">MATHEMATICS</th>
-        <th colspan="5" class="th-lang" style="text-align:center">LANGUAGE</th>
-        <th colspan="5" style="text-align:center;background:#1F497D">MATHEMATICS</th>
-        <th colspan="5" style="text-align:center;background:#236b8e">LANGUAGE</th>
-        <th colspan="5" style="text-align:center;background:#1a6b52">MATHEMATICS</th>
-        <th colspan="5" style="text-align:center;background:#2e7d32">LANGUAGE</th>
+        <th colspan="6" class="th-math" style="text-align:center">MATHEMATICS</th>
+        <th colspan="6" class="th-lang" style="text-align:center">LANGUAGE</th>
+        <th colspan="6" style="text-align:center;background:#1F497D">MATHEMATICS</th>
+        <th colspan="6" style="text-align:center;background:#236b8e">LANGUAGE</th>
+        <th colspan="6" style="text-align:center;background:#1a6b52">MATHEMATICS</th>
+        <th colspan="6" style="text-align:center;background:#2e7d32">LANGUAGE</th>
       </tr>
       <tr>
         <th class="th-section">GR3</th>
@@ -1841,31 +1854,37 @@ function renderPerfTable(year='2025', gradeStr=''){
         <th class="th-math">${y1}</th>
         <th class="th-math">${y2}</th>
         <th class="th-math">DEV</th>
+        <th class="th-math">Dis DEV%</th>
         <th class="th-math">Prov DEV%</th>
         <th class="th-lang">${y0}</th>
         <th class="th-lang">${y1}</th>
         <th class="th-lang">${y2}</th>
         <th class="th-lang">DEV</th>
+        <th class="th-lang">Dis DEV%</th>
         <th class="th-lang">Prov DEV%</th>
         <th style="background:#1F497D">${y0}</th>
         <th style="background:#1F497D">${y1}</th>
         <th style="background:#1F497D">${y2}</th>
         <th style="background:#1F497D">DEV</th>
+        <th style="background:#1F497D">Dis DEV%</th>
         <th style="background:#1F497D">Prov DEV%</th>
         <th style="background:#236b8e">${y0}</th>
         <th style="background:#236b8e">${y1}</th>
         <th style="background:#236b8e">${y2}</th>
         <th style="background:#236b8e">DEV</th>
+        <th style="background:#236b8e">Dis DEV%</th>
         <th style="background:#236b8e">Prov DEV%</th>
         <th style="background:#1a6b52">${y0}</th>
         <th style="background:#1a6b52">${y1}</th>
         <th style="background:#1a6b52">${y2}</th>
         <th style="background:#1a6b52">DEV</th>
+        <th style="background:#1a6b52">Dis DEV%</th>
         <th style="background:#1a6b52">Prov DEV%</th>
         <th style="background:#2e7d32">${y0}</th>
         <th style="background:#2e7d32">${y1}</th>
         <th style="background:#2e7d32">${y2}</th>
         <th style="background:#2e7d32">DEV</th>
+        <th style="background:#2e7d32">Dis DEV%</th>
         <th style="background:#2e7d32">Prov DEV%</th>
       </tr>
     `;
@@ -1885,6 +1904,21 @@ function renderPerfTable(year='2025', gradeStr=''){
       else if(g===9) groups[k].gr9=s;
     });
 
+    // Get district benchmarks for each grade
+    const districtMath3 = getLockedDistrictPass(districtLabel, year, 'math', [3]);
+    const districtMath6 = getLockedDistrictPass(districtLabel, year, 'math', [6]);
+    const districtMath9 = getLockedDistrictPass(districtLabel, year, 'math', [9]);
+    const districtLang3 = getLockedDistrictPass(districtLabel, year, 'lang', [3]);
+    const districtLang6 = getLockedDistrictPass(districtLabel, year, 'lang', [6]);
+    const districtLang9 = getLockedDistrictPass(districtLabel, year, 'lang', [9]);
+    
+    const districtMathPass = {3: districtMath3 ? districtMath3.pass : null,
+                              6: districtMath6 ? districtMath6.pass : null,
+                              9: districtMath9 ? districtMath9.pass : null};
+    const districtLangPass = {3: districtLang3 ? districtLang3.pass : null,
+                              6: districtLang6 ? districtLang6.pass : null,
+                              9: districtLang9 ? districtLang9.pass : null};
+
     // Sort by circuit then name
     const schools = Object.values(groups).sort((a,b)=>{
       const ca=cirNum(a.circuit), cb=cirNum(b.circuit);
@@ -1898,13 +1932,14 @@ function renderPerfTable(year='2025', gradeStr=''){
       const e3=enrol?(enrol.gr3||0):'–', e6=enrol?(enrol.gr6||0):'–', e9=enrol?(enrol.gr9||0):'–';
 
       function grCols(s, gradeNum){
-        if(!s) return `<td class="num val-none">–</td>`.repeat(10); // 10 columns per grade (5 math + 5 lang)
+        if(!s) return `<td class="num val-none">–</td>`.repeat(12); // 12 columns per grade (6 math + 6 lang)
         const m23=s.mTrend?.pass?.[2023]??null;
         const m24=s.mTrend?.pass?.[2024]??null;
         const m25=s.mTrend?.pass?.[2025]??s.math.pass;
         const mDev=(nn(m24)&&nn(m25))?+((m25-m24).toFixed(1)):null;
         const mProv = getProvincePass([gradeNum], 'math', year);
         const mProvDev = (nn(m25) && nn(mProv)) ? +((m25 - mProv).toFixed(1)) : null;
+        const mDisDev = (nn(m25) && nn(districtMathPass[gradeNum])) ? +((m25 - districtMathPass[gradeNum]).toFixed(1)) : null;
         
         const l23=s.lTrend?.pass?.[2023]??null;
         const l24=s.lTrend?.pass?.[2024]??null;
@@ -1912,21 +1947,24 @@ function renderPerfTable(year='2025', gradeStr=''){
         const lDev=(nn(l24)&&nn(l25))?+((l25-l24).toFixed(1)):null;
         const lProv = getProvincePass([gradeNum], 'lang', year);
         const lProvDev = (nn(l25) && nn(lProv)) ? +((l25 - lProv).toFixed(1)) : null;
+        const lDisDev = (nn(l25) && nn(districtLangPass[gradeNum])) ? +((l25 - districtLangPass[gradeNum]).toFixed(1)) : null;
         
-        // Return 10 cells: 5 math (2023,2024,2025,DEV,Prov DEV%) + 5 lang (2023,2024,2025,DEV,Prov DEV%)
+        // Return 12 cells: 6 math (2023,2024,2025,DEV,Dis DEV%,Prov DEV%) + 6 lang (2023,2024,2025,DEV,Dis DEV%,Prov DEV%)
         return `<td class="num">${fv(m23)}</td>` +
                `<td class="num">${fv(m24)}</td>` +
                `<td class="num">${fv(m25)}</td>` +
                `<td class="num">${fd(mDev)}</td>` +
+               `<td class="num">${fd(mDisDev)}</td>` +
                `<td class="num">${fd(mProvDev)}</td>` +
                `<td class="num">${fv(l23)}</td>` +
                `<td class="num">${fv(l24)}</td>` +
                `<td class="num">${fv(l25)}</td>` +
                `<td class="num">${fd(lDev)}</td>` +
+               `<td class="num">${fd(lDisDev)}</td>` +
                `<td class="num">${fd(lProvDev)}</td>`;
       }
 
-      // Total columns: 6 fixed (CIR,PHASE,GR3,GR6,GR9,SCHOOL) + 30 data columns (10 per grade × 3 grades) = 36
+      // Total columns: 6 fixed (CIR,PHASE,GR3,GR6,GR9,SCHOOL) + 36 data columns (12 per grade × 3 grades) = 42
       return `<tr class="${isNew?'cir-group-start':''}">
         <td class="cir-cell">${cir}</td>
         <td class="phase-cell">${phase}</td>
@@ -1939,7 +1977,7 @@ function renderPerfTable(year='2025', gradeStr=''){
     }).join('');
 
     const tbody = document.getElementById('tperf-body');
-    if(tbody) tbody.innerHTML = rows || '<tr><td colspan="36" style="text-align:center;padding:2rem;color:var(--mu)">No data — upload PDFs to begin</td></tr>';
+    if(tbody) tbody.innerHTML = rows || '<tr><td colspan="42" style="text-align:center;padding:2rem;color:var(--mu)">No data — upload PDFs to begin</td></tr>';
   }
 }
 
