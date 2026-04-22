@@ -6,8 +6,10 @@
 <title>WCED Systemic Testing Programme – Analysis Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/styles/choices.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/choices.js@11.1.0/public/assets/scripts/choices.min.js"></script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Century+Gothic&display=swap');
 :root{
@@ -59,7 +61,7 @@ header{background:var(--ac);border-bottom:none;padding:0 2rem;display:flex;align
 .sw{position:relative;flex:1;min-width:170px;max-width:260px}
 .sw input{width:100%;padding-left:26px;min-width:unset}
 .si{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--mu);font-size:.8rem;pointer-events:none}
-.main{padding:1.2rem 1.75rem}
+.main{padding:1.2rem 1.75rem;padding-bottom:70px;margin-bottom:0}
 .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.85rem;margin-bottom:1.2rem}
 .sc{background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:1rem;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,20,137,.06)}
 .sc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
@@ -80,15 +82,37 @@ header{background:var(--ac);border-bottom:none;padding:0 2rem;display:flex;align
 .ptitle{font-family:'Century Gothic',CenturyGothic,sans-serif;font-weight:700;font-size:.85rem;margin-bottom:.85rem;display:flex;align-items:center;justify-content:space-between;color:var(--ac2)}
 .psub{font-size:.7rem;color:var(--mu);font-family:'Century Gothic',CenturyGothic,sans-serif;font-weight:400}
 canvas{max-height:260px}
-.tw{overflow-x:auto}
+.tw{overflow-x:auto;max-height:calc(100vh - 300px);overflow-y:auto}
+.table-container {
+    position: relative;
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    overflow-x: auto;
+    margin-bottom: 10px;
+    border: 1px solid var(--bd);
+    border-radius: 4px;
+}
 table{width:100%;border-collapse:collapse;font-size:.79rem}
-thead th{background:var(--ac);padding:8px 10px;text-align:left;font-family:'Century Gothic',CenturyGothic,sans-serif;font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#fff;border-bottom:1px solid var(--ac2);white-space:nowrap;cursor:pointer;user-select:none}
+thead {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--ac);
+}
+thead th{background:var(--ac);color:#fff;padding:5px 6px;white-space:nowrap;font-size:.65rem;text-transform:uppercase;letter-spacing:.03em;border:1px solid rgba(255,255,255,.15);text-align:center;vertical-align:middle}
+thead th:first-child{left:0;z-index:101}
+thead th:nth-child(2){left:40px;z-index:101}
+thead th:nth-child(3),thead th:nth-child(4),thead th:nth-child(5){z-index:100}
 thead th:hover{color:var(--tx)}
 th.sa::after{content:' ↑';color:#7ec8e3}th.sd::after{content:' ↓';color:#7ec8e3}
 tbody tr{border-bottom:1px solid var(--bd);transition:background .1s}
 tbody tr:hover{background:var(--sf2)}
-td{padding:8px 10px}
+td{padding:3px 6px}
+td:first-child{position:sticky;left:0;background:inherit;z-index:90}
+td:nth-child(2){position:sticky;left:40px;background:inherit;z-index:90}
+tr:hover td:first-child,tr:hover td:nth-child(2){background:var(--sf2)}
 .tr{text-align:right}.tb2{font-weight:500}
+.num{text-align:right;font-variant-numeric:tabular-nums;min-width:36px}
 .hb{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
 .hbr{width:55px;height:8px;background:var(--sf2);border-radius:4px;overflow:hidden;flex-shrink:0}
 .hbf{height:100%;border-radius:4px}
@@ -115,6 +139,7 @@ td{padding:8px 10px}
 
 /* ── SYSTEMIC PERFORMANCE TABLE ── */
 #tperf{font-size:.74rem;border-collapse:collapse;width:100%}
+#tperf thead{position:sticky;top:0;z-index:200;background:var(--ac)}
 #tperf thead th{background:var(--ac);color:#fff;padding:5px 6px;white-space:nowrap;font-size:.65rem;text-transform:uppercase;letter-spacing:.03em;border:1px solid rgba(255,255,255,.15);text-align:center;vertical-align:middle}
 #tperf thead th.th-math{background:#1F497D}
 #tperf thead th.th-lang{background:#2e7d32}
@@ -128,6 +153,9 @@ td{padding:8px 10px}
 #tperf .dev-pos{color:#1b7e3e;font-weight:700}
 #tperf .dev-neg{color:#c62828;font-weight:700}
 #tperf .dev-neu{color:var(--mu)}
+#tperf .sba-dev-pos{color:#1b7e3e;font-weight:700}
+#tperf .sba-dev-mid{color:#ed6c02;font-weight:600}
+#tperf .sba-dev-neg{color:#c62828;font-weight:700}
 #tperf .val-hi{color:#1b7e3e;font-weight:600}
 #tperf .val-mid{color:#001489;font-weight:600}
 #tperf .val-lo{color:#c62828}
@@ -135,8 +163,39 @@ td{padding:8px 10px}
 #tperf tbody td.enr{text-align:center;color:var(--mu);font-size:.67rem}
 #tperf .phase-cell{font-size:.65rem;color:var(--mu);max-width:80px;white-space:normal;line-height:1.3}
 /* Grade block column separators in all-grades view */
-#tperf td:nth-child(12),#tperf th:nth-child(12),
-#tperf td:nth-child(22),#tperf th:nth-child(22){border-right:2px solid rgba(255,255,255,.3)}
+#tperf td:nth-child(11),#tperf th:nth-child(11),
+#tperf td:nth-child(20),#tperf th:nth-child(20){border-right:2px solid rgba(255,255,255,.3)}
+
+/* ── OVERVIEW TABLE: HORIZONTALLY FROZEN COLUMNS (Col 1–6 incl. School Name) ── */
+/* position:sticky is set here; left values are applied by fixPerfSticky() in JS */
+#tperf thead th.sticky-col { position:sticky; z-index:300; background:var(--ac); }
+#tperf tbody td.sticky-col { position:sticky; z-index:90;  background:var(--sf); }
+
+/* School name column gets a freeze-line shadow */
+#tperf thead th.sticky-col-last { box-shadow:3px 0 6px -2px rgba(0,20,137,.3); }
+#tperf tbody td.sticky-col-last { box-shadow:3px 0 6px -2px rgba(0,20,137,.18); }
+
+/* Hover: keep sticky body cells consistent with row colour */
+#tperf tbody tr:hover td.sticky-col { background:var(--sf2); }
+
+/* ── TRENDS COLLAPSIBLE DATA TABLES ── */
+.trend-tbl-wrap{margin-top:.75rem;border-top:1px solid var(--bd);padding-top:.5rem}
+.trend-tbl-toggle{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.74rem;color:var(--ac2);font-weight:700;padding:3px 0;display:flex;align-items:center;gap:.4rem;width:100%;text-align:left;transition:color .15s}
+.trend-tbl-toggle:hover{color:var(--ac)}
+.trend-tbl-body{margin-top:.5rem;overflow-x:auto}
+.trend-dt{width:100%;border-collapse:collapse;font-size:.72rem}
+.trend-dt thead th{background:var(--ac);color:#fff;padding:4px 8px;white-space:nowrap;font-size:.65rem;text-transform:uppercase;letter-spacing:.04em;text-align:center;border:1px solid rgba(255,255,255,.15)}
+.trend-dt thead th:first-child{text-align:left}
+.trend-dt tbody td{padding:3px 8px;border-bottom:1px solid var(--bd);text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trend-dt tbody td:first-child{text-align:left;font-weight:600;color:var(--tx)}
+.trend-dt tbody tr:hover{background:var(--sf2)}
+.trend-dt tbody tr.tdt-dist td{background:rgba(0,20,137,.04);font-style:italic}
+.trend-dt tbody tr.tdt-prov td{background:rgba(75,120,200,.04);font-style:italic}
+.trend-dt .tdt-hi{color:#1b7e3e;font-weight:700}
+.trend-dt .tdt-lo{color:#c62828}
+.trend-dt .tdt-dev-pos{color:#1b7e3e;font-weight:700}
+.trend-dt .tdt-dev-neg{color:#c62828;font-weight:700}
+.trend-dt .tdt-dev-neu{color:var(--mu)}
 
 /* ── PROVINCIAL RANKING TABLE ── */
 .rank-tbl{width:100%;border-collapse:collapse;font-size:.78rem}
@@ -200,6 +259,156 @@ td{padding:8px 10px}
 .toolbar .choices__placeholder{opacity:.85}
 .toolbar .choices[data-type*=select-one] .choices__input{background:transparent}
 .toolbar .choices__input{font-family:inherit;font-size:.8rem}
+
+/* Item Analysis table styling */
+.item-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+.item-table th {
+    background: var(--ac);
+    color: white;
+    padding: 8px 10px;
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: center;
+    vertical-align: middle;
+}
+.item-table th:first-child {
+    border-top-left-radius: 4px;
+    text-align: left;
+}
+.item-table th:nth-child(2),
+.item-table th:nth-child(3) {
+    text-align: center;
+}
+.item-table th:last-child {
+    border-top-right-radius: 4px;
+}
+.item-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--bd);
+    vertical-align: middle;
+}
+.item-table td:first-child {
+    text-align: left;
+    font-weight: 500;
+    color: var(--tx);
+}
+.item-table td:nth-child(2) {
+    text-align: center;
+    color: var(--dg);
+    font-weight: 600;
+}
+.item-table td:nth-child(3) {
+    text-align: center;
+    color: var(--ac3);
+    font-weight: 600;
+}
+.item-table tr:hover {
+    background: var(--sf2);
+}
+.item-section {
+    margin-bottom: 2rem;
+}
+.item-section h3 {
+    font-family: 'Century Gothic', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ac2);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid var(--ac);
+}
+
+/* Fixed bottom toolbar */
+.bottom-toolbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--sf);
+    border-top: 2px solid var(--ac);
+    padding: 0.6rem 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+.bottom-toolbar .gps {
+    margin-bottom: 0;
+}
+
+/* New styles for the classes table */
+#classes-table-container {
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid var(--bd);
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+#classes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+}
+#classes-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+#classes-table thead th {
+    background: var(--ac);
+    color: #fff;
+    padding: 6px 8px;
+    white-space: nowrap;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid rgba(255,255,255,0.15);
+    text-align: center;
+}
+#classes-table tbody td {
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--bd);
+    text-align: center;
+}
+#classes-table tbody td:first-child {
+    text-align: left;
+    font-weight: 500;
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 90;
+}
+#classes-table tbody td:nth-child(2) {
+    text-align: left;
+    position: sticky;
+    left: 140px;
+    background: inherit;
+    z-index: 90;
+}
+#classes-table tbody tr:hover td:first-child,
+#classes-table tbody tr:hover td:nth-child(2) {
+    background: var(--sf2);
+}
+#classes-table tbody td[class*="pass"] {
+    font-weight: 500;
+}
+#classes-table tbody td.pass-low {
+    color: var(--dg);
+}
+#classes-table tbody td.pass-mid {
+    color: var(--warning);
+}
+#classes-table tbody td.pass-high {
+    color: var(--ac3);
+}
 </style>
 </head>
 <body>
@@ -208,6 +417,7 @@ td{padding:8px 10px}
   <div class="hdr-r">
     <span class="lpill" id="lpill"></span>
     <span class="badge" id="sbadge">No data loaded</span> <span class="badge" id="vbadge">classes·years</span>
+    <button class="btn" id="expbtn" style="display:none;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);padding:6px 14px;border-radius:4px;cursor:pointer;font-family:inherit" onclick="exportDataJSON()">⬇ Export data.json</button>
     <button class="btn" id="rbtn" style="display:none;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);padding:6px 14px;border-radius:4px;cursor:pointer;font-family:inherit" onclick="resetAll()">↩ New Upload</button>
   </div>
 </header>
@@ -256,6 +466,8 @@ td{padding:8px 10px}
       <option value="math">Mathematics</option>
       <option value="lang">Language</option>
     </select>
+    <label>Quintile</label>
+    <select id="fq"><option value="">All Quintiles</option></select>
     <label>Report Language</label>
     <select id="fl">
       <option value="">All Languages</option>
@@ -280,23 +492,25 @@ td{padding:8px 10px}
       <button class="tb" onclick="showTab('compare',this)">Provincial Ranking</button>
     </div>
 
-    <!-- OVERVIEW -->
+    <!-- OVERVIEW - Default view shows systemic performance table -->
     <div class="tp active" id="tab-overview">
-      <!-- Grade-selected: systemic performance table -->
-      <div id="ov-perf-wrap" style="display:none">
+      <!-- Grade-selected: systemic performance table (shown by default) -->
+      <div id="ov-perf-wrap" style="display:block">
         <div class="panel" style="padding:.75rem 1rem">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.7rem">
             <div class="ptitle" id="ov-perf-title" style="margin-bottom:0">2025 Systemic Performance</div>
             <button onclick="exportPerfTable()" style="font-size:.74rem;padding:5px 12px;background:var(--ac);color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:inherit">⬇ Export CSV</button>
           </div>
-          <div class="tw"><table id="tperf">
-            <thead></thead>
-            <tbody id="tperf-body"></tbody>
-          </table></div>
+          <div class="table-container">
+            <table id="tperf">
+              <thead></thead>
+              <tbody id="tperf-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
-      <!-- No grade selected: chart grid -->
-      <div id="ov-charts-wrap">
+      <!-- Charts (hidden by default, only shown when no grade selected) -->
+      <div id="ov-charts-wrap" style="display:none">
         <div class="pg pg2">
           <div class="panel"><div class="ptitle">Mathematics Pass % per School<span class="psub">Top 30</span></div><canvas id="ch-mp"></canvas></div>
           <div class="panel"><div class="ptitle">Language Pass % per School<span class="psub">Top 30</span></div><canvas id="ch-lp"></canvas></div>
@@ -332,8 +546,8 @@ td{padding:8px 10px}
             <th onclick="srt('tsch',5)">M.Avg%</th>
             <th onclick="srt('tsch',6)">L.Pass%</th>
             <th onclick="srt('tsch',7)">L.Avg%</th>
-            <th onclick="srt('tsch',8)">Prov M%</th>
-            <th onclick="srt('tsch',9)">Prov L%</th>
+            <th onclick="srt('tsch',8)">Dist M%</th>
+            <th onclick="srt('tsch',9)">Dist L%</th>
             <th onclick="srt('tsch',10)">Quintile</th>
             <th>Status</th>
           </tr></thead>
@@ -342,7 +556,7 @@ td{padding:8px 10px}
       </div>
     </div>
 
-    <!-- CLASSES -->
+    <!-- CLASSES - MODIFIED TO FLAT TABLE FORMAT -->
     <div class="tp" id="tab-classes">
       <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.85rem">
         <div class="gps" id="cls-gps" style="margin-bottom:0">
@@ -351,10 +565,29 @@ td{padding:8px 10px}
           <button class="gp" onclick="clsGr('6',this)">Grade 6</button>
           <button class="gp" onclick="clsGr('9',this)">Grade 9</button>
         </div>
-
       </div>
-      <div id="cls-debug"></div>
-      <div id="cls-cont"></div>
+      <div class="panel">
+        <div class="ptitle">Class Performance Summary</div>
+        <div id="classes-table-container">
+          <table id="classes-table">
+            <thead>
+              <tr>
+                <th>School</th>
+                <th>Circuit</th>
+                <th>Grade</th>
+                <th>Class</th>
+                <th>M.Pass%</th>
+                <th>M.Avg%</th>
+                <th>L.Pass%</th>
+                <th>L.Avg%</th>
+              </tr>
+            </thead>
+            <tbody id="classes-table-body">
+              <!-- Populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- CIRCUITS -->
@@ -382,38 +615,84 @@ td{padding:8px 10px}
       </div>
     </div>
 
-    <!-- ITEMS -->
+    <!-- ITEMS (Unified lists with English headings, centered) -->
     <div class="tp" id="tab-items">
-      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.5rem">
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:1.5rem">
         <div class="gps" id="it-gps" style="margin-bottom:0">
           <button class="gp active" onclick="itGr('3',this)">Grade 3</button>
           <button class="gp" onclick="itGr('6',this)">Grade 6</button>
           <button class="gp" onclick="itGr('9',this)">Grade 9</button>
         </div>
-        <div style="display:flex;align-items:center;gap:.4rem;margin-left:auto">
-          <label style="font-size:.76rem;color:var(--mu);white-space:nowrap">School</label>
-          <select id="it-school" onchange="renderItems_(IT_GR)" style="background:var(--sf2);border:1px solid var(--bd);border-radius:6px;color:var(--tx);padding:5px 9px;font-size:.8rem;font-family:inherit;min-width:220px;cursor:pointer">
-            <option value="">All Schools</option>
-          </select>
+      </div>
+      
+      <div class="pg pg2">
+        <!-- Mathematics Section -->
+        <div class="panel">
+          <div class="ptitle">Mathematics Item Analysis - Grade <span id="math-grade">3</span></div>
+          <div id="im-items" class="tw"></div>
         </div>
-      </div>
-      <div class="pg pg2">
-        <div class="panel"><div class="ptitle">Mathematics – Weakest Concepts</div><div id="im-w"></div></div>
-        <div class="panel"><div class="ptitle">Mathematics – Strongest Concepts</div><div id="im-s"></div></div>
-      </div>
-      <div class="pg pg2">
-        <div class="panel"><div class="ptitle">Language – Weakest Concepts</div><div id="il-w"></div></div>
-        <div class="panel"><div class="ptitle">Language – Strongest Concepts</div><div id="il-s"></div></div>
+
+        <!-- Language Section -->
+        <div class="panel">
+          <div class="ptitle">Language Item Analysis - Grade <span id="lang-grade">3</span></div>
+          <div id="il-items" class="tw"></div>
+        </div>
       </div>
     </div>
 
     <!-- TRENDS -->
     <div class="tp" id="tab-trends">
-      <div class="pg pg1"><div class="panel"><div class="ptitle">3-Year Mathematics Pass % Trend</div><canvas id="ch-tmp" style="max-height:320px"></canvas></div></div>
-      <div class="pg pg1"><div class="panel"><div class="ptitle">3-Year Language Pass % Trend</div><canvas id="ch-tlp" style="max-height:320px"></canvas></div></div>
+      <!-- Trends toolbar -->
+      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;background:var(--sf);border:1px solid var(--bd);border-radius:6px;padding:.65rem 1rem;box-shadow:0 1px 4px rgba(0,20,137,.06)">
+        <div style="font-size:.76rem;color:var(--mu);font-weight:700;white-space:nowrap">VIEW</div>
+        <div class="gps" id="trend-view-gps" style="margin-bottom:0;flex:1">
+          <button class="gp active" onclick="setTrendView('schools',this)">Schools</button>
+          <button class="gp" onclick="setTrendView('benchmark',this)">District vs Province</button>
+        </div>
+        <div class="tsep"></div>
+        <div style="font-size:.76rem;color:var(--mu);font-weight:700;white-space:nowrap">GRADE</div>
+        <div class="gps" id="trend-grade-gps" style="margin-bottom:0">
+          <button class="gp active" onclick="setTrendGrade('all',this)">All</button>
+          <button class="gp" onclick="setTrendGrade('3',this)">Gr. 3</button>
+          <button class="gp" onclick="setTrendGrade('6',this)">Gr. 6</button>
+          <button class="gp" onclick="setTrendGrade('9',this)">Gr. 9</button>
+        </div>
+      </div>
       <div class="pg pg2">
-        <div class="panel"><div class="ptitle">Mathematics Average % Trend</div><canvas id="ch-tma"></canvas></div>
-        <div class="panel"><div class="ptitle">Language Average % Trend</div><canvas id="ch-tla"></canvas></div>
+        <div class="panel">
+          <div class="ptitle">Mathematics Pass % Trend<span class="psub" id="trend-grade-label-math"></span></div>
+          <canvas id="ch-tmp" style="max-height:300px"></canvas>
+          <div class="trend-tbl-wrap">
+            <button class="trend-tbl-toggle" onclick="toggleTrendTable('tdt-tmp',this)">▶ Show data table</button>
+            <div id="tdt-tmp" class="trend-tbl-body" style="display:none"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ptitle">Language Pass % Trend<span class="psub" id="trend-grade-label-lang"></span></div>
+          <canvas id="ch-tlp" style="max-height:300px"></canvas>
+          <div class="trend-tbl-wrap">
+            <button class="trend-tbl-toggle" onclick="toggleTrendTable('tdt-tlp',this)">▶ Show data table</button>
+            <div id="tdt-tlp" class="trend-tbl-body" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pg pg2">
+        <div class="panel">
+          <div class="ptitle">Mathematics Average % Trend<span class="psub" id="trend-grade-label-mav"></span></div>
+          <canvas id="ch-tma"></canvas>
+          <div class="trend-tbl-wrap">
+            <button class="trend-tbl-toggle" onclick="toggleTrendTable('tdt-tma',this)">▶ Show data table</button>
+            <div id="tdt-tma" class="trend-tbl-body" style="display:none"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="ptitle">Language Average % Trend<span class="psub" id="trend-grade-label-lav"></span></div>
+          <canvas id="ch-tla"></canvas>
+          <div class="trend-tbl-wrap">
+            <button class="trend-tbl-toggle" onclick="toggleTrendTable('tdt-tla',this)">▶ Show data table</button>
+            <div id="tdt-tla" class="trend-tbl-body" style="display:none"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -457,10 +736,386 @@ td{padding:8px 10px}
       </div>
     </div>
   </div>
+
+  <!-- Fixed bottom toolbar for Item Analysis grade selection -->
+  <div class="bottom-toolbar" id="bottom-toolbar" style="display:none;">
+    <div class="gps" id="bottom-gps">
+      <button class="gp active" onclick="itGr('3',this)">Grade 3</button>
+      <button class="gp" onclick="itGr('6',this)">Grade 6</button>
+      <button class="gp" onclick="itGr('9',this)">Grade 9</button>
+    </div>
+  </div>
 </div>
 
 <script>
 'use strict';
+// Register datalabels plugin globally but disable by default
+if(window.ChartDataLabels){
+  Chart.register(ChartDataLabels);
+  Chart.defaults.set('plugins.datalabels', {display: false});
+}
+
+// ===== SBA PASS RATES LOOKUP TABLE (separate for Language and Mathematics) =====
+const SBA_RATES = {
+  // Format: "SCHOOL NAME-GRADE-subject" -> rate
+  // subject: 'lang' or 'math'
+  
+  // Grade 3
+  'AKKERBOOM PRIMÊRE SKOOL-3-lang': 80,
+  'AKKERBOOM PRIMÊRE SKOOL-3-math': 100,
+  'B.F. OOSTHUIZEN PRIMÊRE SKOOL-3-lang': 71.4,
+  'B.F. OOSTHUIZEN PRIMÊRE SKOOL-3-math': 82.9,
+  'BARRYDALE HOËRSKOOL-3-lang': 76.3,
+  'BARRYDALE HOËRSKOOL-3-math': 81.6,
+  'BONTEBOK PRIMÊRE SKOOL-3-lang': 79.3,
+  'BONTEBOK PRIMÊRE SKOOL-3-math': 90.5,
+  'BREDASDORP PRIMARY SCHOOL-3-lang': 96.9,
+  'BREDASDORP PRIMARY SCHOOL-3-math': 97.2,
+  'BUFFELJAGSRIVIER LAERSKOOL-3-lang': 84.2,
+  'BUFFELJAGSRIVIER LAERSKOOL-3-math': 89.5,
+  'DE HEIDE PRIMARY SCHOOL-3-lang': 81.9,
+  'DE HEIDE PRIMARY SCHOOL-3-math': 81.4,
+  'ELIM MOR PRIMÊRE SKOOL-3-lang': 68,
+  'ELIM MOR PRIMÊRE SKOOL-3-math': 72,
+  'KLEINFONTEIN PRIMÊRE SKOOL-3-lang': 100,
+  'KLEINFONTEIN PRIMÊRE SKOOL-3-math': 100,
+  'KLIPDALE EK PRIMÊRE SKOOL-3-lang': 100,
+  'KLIPDALE EK PRIMÊRE SKOOL-3-math': 85.7,
+  'KLUITJIESKRAAL NGK PRIMÊRE SKOOL-3-lang': 60,
+  'KLUITJIESKRAAL NGK PRIMÊRE SKOOL-3-math': 80,
+  'LEMOENSHOEK NGK PRIMÊRE SKOOL-3-lang': 71.4,
+  'LEMOENSHOEK NGK PRIMÊRE SKOOL-3-math': 71.4,
+  'MULLERSRUS PRIMÊRE SKOOL-3-lang': 80,
+  'MULLERSRUS PRIMÊRE SKOOL-3-math': 73.3,
+  'OUPLAAS EK PRIMÊRE SKOOL-3-lang': 81.8,
+  'OUPLAAS EK PRIMÊRE SKOOL-3-math': 100,
+  'PROTEA PRIMÊRE SKOOL-3-lang': 63.6,
+  'PROTEA PRIMÊRE SKOOL-3-math': 68.8,
+  'PROTEM NGK PRIMÊRE SKOOL-3-lang': 100,
+  'PROTEM NGK PRIMÊRE SKOOL-3-math': 100,
+  "ST. JOHN'S EK PRIMÊRE SKOOL-3-lang": 71.4,
+  "ST. JOHN'S EK PRIMÊRE SKOOL-3-math": 78.6,
+  'STRUISBAAI PRIMÊRE SKOOL-3-lang': 65.5,
+  'STRUISBAAI PRIMÊRE SKOOL-3-math': 82.8,
+  'SUURBRAAK PRIMÊRE SKOOL-3-lang': 68.8,
+  'SUURBRAAK PRIMÊRE SKOOL-3-math': 84.4,
+  'SWELLENDAM LAERSKOOL-3-lang': 94.7,
+  'SWELLENDAM LAERSKOOL-3-math': 98.7,
+  'UITVLUG VGK PRIMÊRE SKOOL-3-lang': 90.9,
+  'UITVLUG VGK PRIMÊRE SKOOL-3-math': 90.9,
+  'VRT PITT PRIMARY SCHOOL-3-lang': 76.4,
+  'VRT PITT PRIMARY SCHOOL-3-math': 77.9,
+  'WAGENHUISKRANTZ PRIMÊRE SKOOL-3-lang': 85.7,
+  'WAGENHUISKRANTZ PRIMÊRE SKOOL-3-math': 92.9,
+  'WELTEVREDE VGK PRIMÊRE SKOOL (BARRYDALE)-3-lang': 100,
+  'WELTEVREDE VGK PRIMÊRE SKOOL (BARRYDALE)-3-math': 100,
+  'ARIESKRAAL SSKV PRIMÊRE SKOOL-3-lang': 78.6,
+  'ARIESKRAAL SSKV PRIMÊRE SKOOL-3-math': 78.6,
+  'DE RUST FUTURA AKADEMIE-3-lang': 77.8,
+  'DE RUST FUTURA AKADEMIE-3-math': 88.9,
+  'DENNEGEUR NGK PRIMÊRE SKOOL (OVERBERG)-3-lang': 75,
+  'DENNEGEUR NGK PRIMÊRE SKOOL (OVERBERG)-3-math': 75,
+  'GLEN ELGIN MOR PRIMÊRE SKOOL-3-lang': 78.3,
+  'GLEN ELGIN MOR PRIMÊRE SKOOL-3-math': 73.9,
+  'GRABOUW HOËRSKOOL-3-lang': 92.6,
+  'GRABOUW HOËRSKOOL-3-math': 98.2,
+  'HAWSTON PRIMÊRE SKOOL-3-lang': 83.4,
+  'HAWSTON PRIMÊRE SKOOL-3-math': 75.2,
+  'HERMANUS PRIMARY SCHOOL-3-lang': 97.4,
+  'HERMANUS PRIMARY SCHOOL-3-math': 98.6,
+  'INGOMSO LETHU PRIMARY SCHOOL-3-lang': 88,
+  'INGOMSO LETHU PRIMARY SCHOOL-3-math': 95.1,
+  'KATHLEEN MURRAY PRIMÊRE SKOOL-3-lang': 83,
+  'KATHLEEN MURRAY PRIMÊRE SKOOL-3-math': 78.2,
+  'KLEINMOND LAERSKOOL-3-lang': 92.2,
+  'KLEINMOND LAERSKOOL-3-math': 97.7,
+  'KLEINMOND PRIMARY SCHOOL-3-lang': 91.4,
+  'KLEINMOND PRIMARY SCHOOL-3-math': 92.5,
+  'LUKHANYO PRIMARY SCHOOL-3-lang': 89.7,
+  'LUKHANYO PRIMARY SCHOOL-3-math': 90.6,
+  'MAXONIA NGK PRIMÊRE SKOOL-3-lang': 90.9,
+  'MAXONIA NGK PRIMÊRE SKOOL-3-math': 100,
+  'MOUNT PLEASANT PRIMÊRE SKOOL-3-lang': 90.3,
+  'MOUNT PLEASANT PRIMÊRE SKOOL-3-math': 93.7,
+  'PINEVIEW PRIMÊRE SKOOL-3-lang': 68,
+  'PINEVIEW PRIMÊRE SKOOL-3-math': 78.7,
+  "ST. MICHAEL'S EK PRIMÊRE SKOOL-3-lang": 65.3,
+  "ST. MICHAEL'S EK PRIMÊRE SKOOL-3-math": 86.1,
+  'UMYEZO WAMA APILE PRIMARY SCHOOL-3-lang': 76.9,
+  'UMYEZO WAMA APILE PRIMARY SCHOOL-3-math': 81.1,
+  'ZWELIHLE PRIMARY SCHOOL-3-lang': 82.6,
+  'ZWELIHLE PRIMARY SCHOOL-3-math': 92.7,
+  'BEREA MOR PRIMÊRE SKOOL-3-lang': 87.8,
+  'BEREA MOR PRIMÊRE SKOOL-3-math': 92.7,
+  'BISSETSDRIFT AKADEMIE-3-lang': 57.9,
+  'BISSETSDRIFT AKADEMIE-3-math': 56.9,
+  'BLOEMENHOF NGK PRIMÊRE SKOOL-3-lang': 87.5,
+  'BLOEMENHOF NGK PRIMÊRE SKOOL-3-math': 100,
+  'BOONTJIESKRAAL PRIMÊRE SKOOL-3-lang': 100,
+  'BOONTJIESKRAAL PRIMÊRE SKOOL-3-math': 100,
+  'BOTRIVIER PRIMÊRE SKOOL-3-lang': 88.2,
+  'BOTRIVIER PRIMÊRE SKOOL-3-math': 92,
+  'DANIEL LE ROUX PRIMÊRE SKOOL-3-lang': 68.4,
+  'DANIEL LE ROUX PRIMÊRE SKOOL-3-math': 76.3,
+  'DE VILLIERS GRAAFF PRIMARY SCHOOL-3-lang': 92.7,
+  'DE VILLIERS GRAAFF PRIMARY SCHOOL-3-math': 92.2,
+  'DIE BRON PRIMARY SCHOOL-3-lang': 82.7,
+  'DIE BRON PRIMARY SCHOOL-3-math': 73.1,
+  'ELANDSRIVIER NGK PRIMÊRE SKOOL-3-lang': 65.4,
+  'ELANDSRIVIER NGK PRIMÊRE SKOOL-3-math': 70.4,
+  'GANSBAAI LAERSKOOL-3-lang': 88.9,
+  'GANSBAAI LAERSKOOL-3-math': 96.3,
+  'GANSBAAI PRIMÊRE SKOOL-3-lang': 63.6,
+  'GANSBAAI PRIMÊRE SKOOL-3-math': 76.6,
+  'GREYTON PRIMÊRE SKOOL-3-lang': 71.1,
+  'GREYTON PRIMÊRE SKOOL-3-math': 65.2,
+  'JONGENSKLIP PRIMÊRE SKOOL-3-lang': 83.3,
+  'JONGENSKLIP PRIMÊRE SKOOL-3-math': 91.7,
+  'KOSIE DE WET PRIMARY SCHOOL-3-lang': 74.1,
+  'KOSIE DE WET PRIMARY SCHOOL-3-math': 76.4,
+  'L.R. SCHMIDT MOR PRIMARY SCHOOL-3-lang': 76.9,
+  'L.R. SCHMIDT MOR PRIMARY SCHOOL-3-math': 88.5,
+  'MASAKHANE PRIMARY SCHOOL-3-lang': 78,
+  'MASAKHANE PRIMARY SCHOOL-3-math': 87.3,
+  'OKKIE SMUTS PRIMARY SCHOOL-3-lang': 89.5,
+  'OKKIE SMUTS PRIMARY SCHOOL-3-math': 89.5,
+  'OVERBERG LAERSKOOL-3-lang': 100,
+  'OVERBERG LAERSKOOL-3-math': 100,
+  'RIVIERSONDEREND HOËRSKOOL-3-lang': 100,
+  'RIVIERSONDEREND HOËRSKOOL-3-math': 100,
+  'RIVIERSONDEREND PRIMÊRE SKOOL-3-lang': 85.7,
+  'RIVIERSONDEREND PRIMÊRE SKOOL-3-math': 98.2,
+  "ST. PAUL'S LAERSKOOL-3-lang": 63.6,
+  "ST. PAUL'S LAERSKOOL-3-math": 100,
+  'SWARTBERG PRIMÊRE SKOOL-3-lang': 90.6,
+  'SWARTBERG PRIMÊRE SKOOL-3-math': 71.6,
+  'TESLAARSDAL PRIMÊRE SKOOL-3-lang': 92.9,
+  'TESLAARSDAL PRIMÊRE SKOOL-3-math': 64.3,
+  'THE GLEBE PRIMÊRE SKOOL-3-lang': 88.9,
+  'THE GLEBE PRIMÊRE SKOOL-3-math': 88.9,
+  'UITKYK LAERSKOOL-3-lang': 97.6,
+  'UITKYK LAERSKOOL-3-math': 100,
+
+  // Grade 6
+  'AKKERBOOM PRIMÊRE SKOOL-6-lang': 100,
+  'AKKERBOOM PRIMÊRE SKOOL-6-math': 100,
+  'B.F. OOSTHUIZEN PRIMÊRE SKOOL-6-lang': 66.1,
+  'B.F. OOSTHUIZEN PRIMÊRE SKOOL-6-math': 53.6,
+  'BARRYDALE HOËRSKOOL-6-lang': 86,
+  'BARRYDALE HOËRSKOOL-6-math': 72,
+  'BONTEBOK PRIMÊRE SKOOL-6-lang': 65.5,
+  'BONTEBOK PRIMÊRE SKOOL-6-math': 60.3,
+  'BREDASDORP PRIMARY SCHOOL-6-lang': 94.8,
+  'BREDASDORP PRIMARY SCHOOL-6-math': 100,
+  'BUFFELJAGSRIVIER LAERSKOOL-6-lang': 95.7,
+  'BUFFELJAGSRIVIER LAERSKOOL-6-math': 91.3,
+  'DE HEIDE PRIMARY SCHOOL-6-lang': 68.5,
+  'DE HEIDE PRIMARY SCHOOL-6-math': 81.9,
+  'ELIM MOR PRIMÊRE SKOOL-6-lang': 90,
+  'ELIM MOR PRIMÊRE SKOOL-6-math': 90,
+  'KLEINFONTEIN PRIMÊRE SKOOL-6-lang': 75,
+  'KLEINFONTEIN PRIMÊRE SKOOL-6-math': 75,
+  'KLIPDALE EK PRIMÊRE SKOOL-6-lang': 60,
+  'KLIPDALE EK PRIMÊRE SKOOL-6-math': 60,
+  'KLUITJIESKRAAL NGK PRIMÊRE SKOOL-6-lang': 75,
+  'KLUITJIESKRAAL NGK PRIMÊRE SKOOL-6-math': 75,
+  'LEMOENSHOEK NGK PRIMÊRE SKOOL-6-lang': 100,
+  'LEMOENSHOEK NGK PRIMÊRE SKOOL-6-math': 100,
+  'MULLERSRUS PRIMÊRE SKOOL-6-lang': 75,
+  'MULLERSRUS PRIMÊRE SKOOL-6-math': 94.1,
+  'OUPLAAS EK PRIMÊRE SKOOL-6-lang': 75,
+  'OUPLAAS EK PRIMÊRE SKOOL-6-math': 87.5,
+  'PROTEA PRIMÊRE SKOOL-6-lang': 44.4,
+  'PROTEA PRIMÊRE SKOOL-6-math': 68.9,
+  'PROTEM NGK PRIMÊRE SKOOL-6-lang': 75,
+  'PROTEM NGK PRIMÊRE SKOOL-6-math': 100,
+  'STRUISBAAI PRIMÊRE SKOOL-6-lang': 53.1,
+  'STRUISBAAI PRIMÊRE SKOOL-6-math': 84.8,
+  'SUURBRAAK PRIMÊRE SKOOL-6-lang': 78.1,
+  'SUURBRAAK PRIMÊRE SKOOL-6-math': 80.5,
+  'SWELLENDAM LAERSKOOL-6-lang': 94.1,
+  'SWELLENDAM LAERSKOOL-6-math': 96.6,
+  'UITVLUG VGK PRIMÊRE SKOOL-6-lang': 85.7,
+  'UITVLUG VGK PRIMÊRE SKOOL-6-math': 85.7,
+  'VLEIPLAAS NGK PRIMÊRE SKOOL-6-lang': 60,
+  'VLEIPLAAS NGK PRIMÊRE SKOOL-6-math': 80,
+  'VRT PITT PRIMARY SCHOOL-6-lang': 73.6,
+  'VRT PITT PRIMARY SCHOOL-6-math': 77.2,
+  'WAGENHUISKRANTZ PRIMÊRE SKOOL-6-lang': 94.1,
+  'WAGENHUISKRANTZ PRIMÊRE SKOOL-6-math': 88.2,
+  'WELTEVREDE VGK PRIMÊRE SKOOL (BARRYDALE)-6-lang': 70,
+  'WELTEVREDE VGK PRIMÊRE SKOOL (BARRYDALE)-6-math': 80,
+  'ARIESKRAAL SSKV PRIMÊRE SKOOL-6-lang': 68.8,
+  'ARIESKRAAL SSKV PRIMÊRE SKOOL-6-math': 68.8,
+  'DE RUST FUTURA AKADEMIE-6-lang': 84.1,
+  'DE RUST FUTURA AKADEMIE-6-math': 62.1,
+  'DENNEGEUR NGK PRIMÊRE SKOOL (OVERBERG)-6-lang': 80.9,
+  'DENNEGEUR NGK PRIMÊRE SKOOL (OVERBERG)-6-math': 76.5,
+  'GLEN ELGIN MOR PRIMÊRE SKOOL-6-lang': 81.8,
+  'GLEN ELGIN MOR PRIMÊRE SKOOL-6-math': 86.4,
+  'GRABOUW HOËRSKOOL-6-lang': 92.5,
+  'GRABOUW HOËRSKOOL-6-math': 96.7,
+  'HAWSTON PRIMÊRE SKOOL-6-lang': 73.4,
+  'HAWSTON PRIMÊRE SKOOL-6-math': 45.1,
+  'HERMANUS PRIMARY SCHOOL-6-lang': 97.9,
+  'HERMANUS PRIMARY SCHOOL-6-math': 98.7,
+  'INGOMSO LETHU PRIMARY SCHOOL-6-lang': 87.8,
+  'INGOMSO LETHU PRIMARY SCHOOL-6-math': 83.5,
+  'KATHLEEN MURRAY PRIMÊRE SKOOL-6-lang': 59.4,
+  'KATHLEEN MURRAY PRIMÊRE SKOOL-6-math': 76.3,
+  'KLEINMOND LAERSKOOL-6-lang': 93.1,
+  'KLEINMOND LAERSKOOL-6-math': 92.6,
+  'KLEINMOND PRIMARY SCHOOL-6-lang': 71.7,
+  'KLEINMOND PRIMARY SCHOOL-6-math': 68.8,
+  'LUKHANYO PRIMARY SCHOOL-6-lang': 85,
+  'LUKHANYO PRIMARY SCHOOL-6-math': 77,
+  'MAXONIA NGK PRIMÊRE SKOOL-6-lang': 75,
+  'MAXONIA NGK PRIMÊRE SKOOL-6-math': 92.9,
+  'MOUNT PLEASANT PRIMÊRE SKOOL-6-lang': 63.6,
+  'MOUNT PLEASANT PRIMÊRE SKOOL-6-math': 73.5,
+  'PINEVIEW PRIMÊRE SKOOL-6-lang': 80.8,
+  'PINEVIEW PRIMÊRE SKOOL-6-math': 89.4,
+  "ST. MICHAEL'S EK PRIMÊRE SKOOL-6-lang": 77.8,
+  "ST. MICHAEL'S EK PRIMÊRE SKOOL-6-math": 64.8,
+  'UMYEZO WAMA APILE PRIMARY SCHOOL-6-lang': 88.2,
+  'UMYEZO WAMA APILE PRIMARY SCHOOL-6-math': 80.4,
+  'ZWELIHLE PRIMARY SCHOOL-6-lang': 89.4,
+  'ZWELIHLE PRIMARY SCHOOL-6-math': 89.4,
+  'BEREA MOR PRIMÊRE SKOOL-6-lang': 88,
+  'BEREA MOR PRIMÊRE SKOOL-6-math': 78.2,
+  'BISSETSDRIFT AKADEMIE-6-lang': 60.4,
+  'BISSETSDRIFT AKADEMIE-6-math': 57.1,
+  'BLOEMENHOF NGK PRIMÊRE SKOOL-6-lang': 91.7,
+  'BLOEMENHOF NGK PRIMÊRE SKOOL-6-math': 91.7,
+  'BOONTJIESKRAAL PRIMÊRE SKOOL-6-lang': 80,
+  'BOONTJIESKRAAL PRIMÊRE SKOOL-6-math': 80,
+  'BOTRIVIER PRIMÊRE SKOOL-6-lang': 82.6,
+  'BOTRIVIER PRIMÊRE SKOOL-6-math': 75.6,
+  'DE VILLIERS GRAAFF PRIMARY SCHOOL-6-lang': 94.3,
+  'DE VILLIERS GRAAFF PRIMARY SCHOOL-6-math': 91.2,
+  'DIE BRON PRIMARY SCHOOL-6-lang': 79.5,
+  'DIE BRON PRIMARY SCHOOL-6-math': 98.3,
+  'ELANDSRIVIER NGK PRIMÊRE SKOOL-6-lang': 60,
+  'ELANDSRIVIER NGK PRIMÊRE SKOOL-6-math': 45,
+  'GANSBAAI LAERSKOOL-6-lang': 96.3,
+  'GANSBAAI LAERSKOOL-6-math': 85,
+  'GANSBAAI PRIMÊRE SKOOL-6-lang': 92.8,
+  'GANSBAAI PRIMÊRE SKOOL-6-math': 79.7,
+  'GREYTON PRIMÊRE SKOOL-6-lang': 68.2,
+  'GREYTON PRIMÊRE SKOOL-6-math': 78.8,
+  'JONGENSKLIP PRIMÊRE SKOOL-6-lang': 87.5,
+  'JONGENSKLIP PRIMÊRE SKOOL-6-math': 75,
+  'KOSIE DE WET PRIMARY SCHOOL-6-lang': 79.9,
+  'KOSIE DE WET PRIMARY SCHOOL-6-math': 72.9,
+  'L.R. SCHMIDT MOR PRIMARY SCHOOL-6-lang': 52.7,
+  'L.R. SCHMIDT MOR PRIMARY SCHOOL-6-math': 54.1,
+  'MASAKHANE PRIMARY SCHOOL-6-lang': 82.1,
+  'MASAKHANE PRIMARY SCHOOL-6-math': 83.3,
+  'OKKIE SMUTS PRIMARY SCHOOL-6-lang': 90.5,
+  'OKKIE SMUTS PRIMARY SCHOOL-6-math': 97,
+  'OVERBERG LAERSKOOL-6-lang': 99.2,
+  'OVERBERG LAERSKOOL-6-math': 98.4,
+  'RIVIERSONDEREND HOËRSKOOL-6-lang': 75.8,
+  'RIVIERSONDEREND HOËRSKOOL-6-math': 60.6,
+  'RIVIERSONDEREND PRIMÊRE SKOOL-6-lang': 90.7,
+  'RIVIERSONDEREND PRIMÊRE SKOOL-6-math': 100,
+  "ST. PAUL'S LAERSKOOL-6-lang": 85.7,
+  "ST. PAUL'S LAERSKOOL-6-math": 100,
+  'SWARTBERG PRIMÊRE SKOOL-6-lang': 83.7,
+  'SWARTBERG PRIMÊRE SKOOL-6-math': 76.5,
+  'TESLAARSDAL PRIMÊRE SKOOL-6-lang': 61.5,
+  'TESLAARSDAL PRIMÊRE SKOOL-6-math': 92.3,
+  'THE GLEBE PRIMÊRE SKOOL-6-lang': 84.1,
+  'THE GLEBE PRIMÊRE SKOOL-6-math': 86.4,
+  'UITKYK LAERSKOOL-6-lang': 83.1,
+  'UITKYK LAERSKOOL-6-math': 86.7,
+
+  // Grade 9
+  'ALBERT MYBURGH SEKONDÊRE SKOOL-9-lang': 72,
+  'ALBERT MYBURGH SEKONDÊRE SKOOL-9-math': 36.8,
+  'BARRYDALE HOËRSKOOL-9-lang': 60.7,
+  'BARRYDALE HOËRSKOOL-9-math': 45.2,
+  'BREDASDORP HOËRSKOOL-9-lang': 99.2,
+  'BREDASDORP HOËRSKOOL-9-math': 84,
+  'SWELLENDAM HOËRSKOOL-9-lang': 98.2,
+  'SWELLENDAM HOËRSKOOL-9-math': 81.6,
+  'SWELLENDAM SEKONDÊR-9-lang': 60.1,
+  'SWELLENDAM SEKONDÊR-9-math': 26.1,
+  'DE RUST FUTURA AKADEMIE-9-lang': 85.9,
+  'DE RUST FUTURA AKADEMIE-9-math': 29.7,
+  'FISHERHAVEN ACADEMY-9-lang': 93.1,
+  'FISHERHAVEN ACADEMY-9-math': 44.3,
+  'GRABOUW HOËRSKOOL-9-lang': 75.2,
+  'GRABOUW HOËRSKOOL-9-math': 59.6,
+  'GROENBERG SEKONDÊR-9-lang': 77.1,
+  'GROENBERG SEKONDÊR-9-math': 45.9,
+  'HAWSTON SEKONDÊR-9-lang': 55.5,
+  'HAWSTON SEKONDÊR-9-math': 40.3,
+  'HERMANUS HOËRSKOOL-9-lang': 83.5,
+  'HERMANUS HOËRSKOOL-9-math': 86.1,
+  'QHAYIYA SECONDARY SCHOOL-9-lang': 86.9,
+  'QHAYIYA SECONDARY SCHOOL-9-math': 22.6,
+  'UMYEZO WAMA APILE HIGH SCHOOL-9-lang': 58.9,
+  'UMYEZO WAMA APILE HIGH SCHOOL-9-math': 7.2,
+  'BISSETSDRIFT AKADEMIE-9-lang': 78.2,
+  'BISSETSDRIFT AKADEMIE-9-math': 45.1,
+  'DE VILLIERS GRAAFF HOËRSKOOL-9-lang': 90.9,
+  'DE VILLIERS GRAAFF HOËRSKOOL-9-math': 67.1,
+  'EMIL WEDER SEKONDÊR-9-lang': 73.8,
+  'EMIL WEDER SEKONDÊR-9-math': 33.1,
+  'GANSBAAI ACADEMIA-9-lang': 75.6,
+  'GANSBAAI ACADEMIA-9-math': 32.5,
+  'OVERBERG HIGH SCHOOL-9-lang': 95.1,
+  'OVERBERG HIGH SCHOOL-9-math': 71.8,
+  'RIVIERSONDEREND HOËRSKOOL-9-lang': 60,
+  'RIVIERSONDEREND HOËRSKOOL-9-math': 41.5,
+  'SWARTBERG SEKONDÊR-9-lang': 71.4,
+  'SWARTBERG SEKONDÊR-9-math': 14.3,
+  'VILLIERSDORP SEKONDÊR-9-lang': 67.9,
+  'VILLIERSDORP SEKONDÊR-9-math': 26.8
+};
+
+// Function to get SBA rate for a school, grade and subject
+function getSBARate(schoolName, grade, subject) {
+  if (!schoolName || !grade || !subject) return null;
+  
+  // Create the key
+  const key = `${schoolName.trim()}-${grade}-${subject}`;
+  
+  // Try exact match first
+  if (SBA_RATES[key] !== undefined) return SBA_RATES[key];
+  
+  // Try with normalized name (remove extra spaces, etc.)
+  const normalizedKey = Object.keys(SBA_RATES).find(k => 
+    k.replace(/\s+/g, ' ').trim() === key.replace(/\s+/g, ' ').trim()
+  );
+  if (normalizedKey) return SBA_RATES[normalizedKey];
+  
+  return null;
+}
+
+// Function to format SBA deviation with color
+function formatSBADev(pass25, sbaRate) {
+  if (!nn(pass25) || !nn(sbaRate)) return '<span class="val-none">–</span>';
+  
+  const dev = +(sbaRate - pass25).toFixed(1);
+  
+  // Color based on absolute deviation
+  // Green: close to 0 (|dev| <= 10)
+  // Orange: medium (10 < |dev| <= 25)
+  // Red: far (|dev| > 25)
+  let colorClass = '';
+  const absDev = Math.abs(dev);
+  if (absDev <= 10) {
+    colorClass = 'sba-dev-pos';
+  } else if (absDev <= 25) {
+    colorClass = 'sba-dev-mid';
+  } else {
+    colorClass = 'sba-dev-neg';
+  }
+  
+  return `<span class="${colorClass}">${dev > 0 ? '+' : ''}${dev}</span>`;
+}
 
 // ===== Data Locking (makes uploaded data immutable after load) =====
 function deepFreeze(obj, seen=new WeakSet()){
@@ -480,7 +1135,6 @@ function lockAllData(){
     (ALL||[]).forEach(s=>deepFreeze(s));
     deepFreeze(BENCH);
     Object.freeze(ALL);
-    // Freeze benchmark constants to prevent accidental modification
     deepFreeze(WC_MASTER);
     deepFreeze(DISTRICT_LOCKED);
     deepFreeze(CIRCUIT_LOCKED);
@@ -489,7 +1143,6 @@ function lockAllData(){
   }catch(e){
     console.warn('Locking failed:', e);
   }
-  // Lock the upload UI so the chosen dataset stays fixed
   try{
     const fi=document.getElementById('fi');
     if(fi){ fi.disabled=true; fi.setAttribute('aria-disabled','true'); }
@@ -500,8 +1153,8 @@ function lockAllData(){
 // ================================================================
 
 // ===== IndexedDB Persistence (offline, local, no server) =====
-const DB_NAME = 'WCED_Systemic_Dashboard';
-const DB_VERSION = 1;
+const DB_NAME = 'WCED_Systemic_Dashboard_FINAL_MUTATION';
+const DB_VERSION = 1560;
 const STORE = 'dataset';
 
 function openDB(){
@@ -569,7 +1222,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 window.onerror=function(msg,src,line,col,err){console.error('JS ERROR:',msg,'at',line+':'+col,err);return false;};
 
 let ALL=[], FLT=[], CHARTS={}, SORTS={}, CLS_GR='', IT_GR='3', AR_GR='3', BENCH={district:{}, circuit:{}};
-let SCH_CHOICES=null, IT_CHOICES=null;
+let SCH_CHOICES=null;
 
 /* ── UPLOAD ── */
 const dz=document.getElementById('dz');
@@ -611,14 +1264,15 @@ async function go(files){
   setTimeout(()=>{
     try{
       lockAllData();
- saveDataset();
- FLT=[...ALL]; 
+      saveDataset();
+      FLT=[...ALL]; 
       populate(); 
       renderAll(); 
       sec('dashboard');
       const uniqueCount = new Set(ALL.map(s => s.emis && s.emis.trim() ? 'EMIS:'+s.emis.trim() : 'NAME:'+(s.name||s.fname||'?'))).size;
       document.getElementById('sbadge').textContent=uniqueCount+' school'+(uniqueCount!==1?'s':'');
       document.getElementById('rbtn').style.display='block';
+      document.getElementById('expbtn').style.display='block';
       const lp=document.getElementById('lpill');
       if(af>0||en>0){lp.style.display='block';lp.textContent=en+' EN · '+af+' AF';}
     }catch(e){
@@ -649,6 +1303,7 @@ function resetAll(){
   try{ const fi=document.getElementById('fi'); if(fi){fi.disabled=false; fi.removeAttribute('aria-disabled');} }catch(e){}
   try{ const dz=document.getElementById('dz'); if(dz){dz.style.pointerEvents='auto'; dz.style.opacity='1';} }catch(e){}
   try{ document.getElementById('rbtn').style.display='none'; }catch(e){}
+  try{ document.getElementById('expbtn').style.display='none'; }catch(e){}
   try{ document.getElementById('sbadge').textContent='No data loaded'; }catch(e){}
   try{ document.getElementById('lpill').style.display='none'; }catch(e){}
   sec('upload');
@@ -917,7 +1572,7 @@ function extractBench(txt,fname,file,kind){
   const district = distM?distM[1].trim().replace(/\s+/g,' '):'';
   const cirM = txt.match(/Circuit:\s*(\d+)/i);
   const cirNum = cirM?cirM[1].trim():'';
-  const cirKey = cirNum?('Circuit '+String(parseInt(cirNum,10)).padStart(2,'0')):'';
+  const cirKey = cirNum?('Circuit '+String(parseInt(cirNum,10)).padStart(2,'00')):'';
 
   const mSec = _sliceAround(txt,'2.1 Pass and average percentages across grades for 2025');
   const math_circuit = kind==='circuit'?_getRowPair(mSec,'CIRCUIT:'):{pass:null,avg:null};
@@ -959,13 +1614,17 @@ function _normCirName(name){ const m=String(name||'').match(/Circuit\s*(\d+)/i);
 function getCircuitBench(circuitName,grade){ const n=_normCirName(circuitName); return (BENCH.circuit[circuitName]&&BENCH.circuit[circuitName][grade]) || (n.two&&BENCH.circuit[n.two]&&BENCH.circuit[n.two][grade]) || (n.one&&BENCH.circuit[n.one]&&BENCH.circuit[n.one][grade]) || null; }
 function getDistrictBench(grade){ return BENCH.district[grade]||null; }
 
-function getProvincePass(grades, which, year = '2025'){
-  const vals=[];
-  (grades||[]).forEach(g=>{
-    const v = WC_MASTER[year] && WC_MASTER[year][which] && WC_MASTER[year][which][g] ? WC_MASTER[year][which][g].pass : null;
-    if(v!==null && v!==undefined && !isNaN(v)) vals.push(v);
-  });
-  return vals.length?avg(vals):null;
+function getDistrictPass(grades, which, year = '2025') {
+  // Use the locked district benchmark for OVERBERG
+  const districtData = DISTRICT_LOCKED.OVERBERG[year]?.[which];
+  if (!districtData) return null;
+  
+  if (grades.length === 1) {
+    return districtData[grades[0]]?.pass || null;
+  }
+  
+  const vals = grades.map(g => districtData[g]?.pass).filter(v => v != null);
+  return vals.length ? avg(vals) : null;
 }
 
 async function parsePDF(file){
@@ -991,8 +1650,6 @@ async function parsePDF(file){
 function nums(blk){return blk.match(/\b\d+\.\d+\b/g)||[]}
 
 // ── EMIS lookup table: canonical name → EMIS number ──
-// Used to enrich school records when EMIS is missing from the PDF,
-// and to deduplicate schools that appear under slightly different name spellings.
 const EMIS_LOOKUP = {
   'AKKERBOOM PRIMÊRE SKOOL':'117337862',
   'ALBERT MYBURGH SEKONDÊRE SKOOL':'113333360',
@@ -1004,6 +1661,7 @@ const EMIS_LOOKUP = {
   'BUFFELJAGSRIVIER LAERSKOOL':'117309219',
   'DE HEIDE PRIMARY SCHOOL':'113330809',
   'ELIM MOR PRIMÊRE SKOOL':'113336181',
+  'INGOMSO LETHU PRIMARY SCHOOL':'100000819',
   'KLEINFONTEIN PRIMÊRE SKOOL':'117337714',
   'KLIPDALE EK PRIMÊRE SKOOL':'113336017',
   'KLUITJIESKRAAL NGK PRIMÊRE SKOOL':'117337722',
@@ -1034,7 +1692,6 @@ const EMIS_LOOKUP = {
   'HAWSTON SEKONDÊR':'115333565',
   'HERMANUS HOËRSKOOL':'115310241',
   'HERMANUS PRIMARY SCHOOL':'115309262',
-  'INGOMSO LETHU PRIMARY SCHOOL':'100000819',
   'KATHLEEN MURRAY PRIMÊRE SKOOL':'114330027',
   'KLEINMOND LAERSKOOL':'114309607',
   'KLEINMOND PRIMARY SCHOOL':'114330663',
@@ -1087,6 +1744,7 @@ const PHASE_LOOKUP = {
   'BONTEBOK PRIMÊRE SKOOL':'FP & IP','BREDASDORP HOËRSKOOL':'FP, IP & SP',
   'BREDASDORP PRIMARY SCHOOL':'FP & IP','BUFFELJAGSRIVIER LAERSKOOL':'FP & IP',
   'DE HEIDE PRIMARY SCHOOL':'FP & IP','ELIM MOR PRIMÊRE SKOOL':'FP & IP',
+  'INGOMSO LETHU PRIMARY SCHOOL':'FP & IP',
   'KLEINFONTEIN PRIMÊRE SKOOL':'FP & IP','KLIPDALE EK PRIMÊRE SKOOL':'FP & IP',
   'KLUITJIESKRAAL NGK PRIMÊRE SKOOL':'FP & IP','LEMOENSHOEK NGK PRIMÊRE SKOOL':'FP & IP',
   'MULLERSRUS PRIMÊRE SKOOL':'FP & IP','OUPLAAS EK PRIMÊRE SKOOL':'FP & IP',
@@ -1101,11 +1759,11 @@ const PHASE_LOOKUP = {
   'FISHERHAVEN ACADEMY':'FP & IP','GLEN ELGIN MOR PRIMÊRE SKOOL':'FP & IP',
   'GROENBERG SEKONDÊR':'SP','HAWSTON PRIMÊRE SKOOL':'FP & IP',
   'HAWSTON SEKONDÊR':'SP','HERMANUS HOËRSKOOL':'FP, IP & SP',
-  'HERMANUS PRIMARY SCHOOL':'FP & IP','INGOMSO LETHU PRIMARY SCHOOL':'FP & IP',
-  'KATHLEEN MURRAY PRIMÊRE SKOOL':'FP & IP','KLEINMOND LAERSKOOL':'FP & IP',
-  'KLEINMOND PRIMARY SCHOOL':'FP & IP','LUKHANYO PRIMARY SCHOOL':'FP & IP',
-  'MAXONIA NGK PRIMÊRE SKOOL':'FP & IP','MOUNT PLEASANT PRIMÊRE SKOOL':'FP & IP',
-  'PINEVIEW PRIMÊRE SKOOL':'FP & IP','QHAYIYA SECONDARY SCHOOL':'SP',
+  'HERMANUS PRIMARY SCHOOL':'FP & IP','KATHLEEN MURRAY PRIMÊRE SKOOL':'FP & IP',
+  'KLEINMOND LAERSKOOL':'FP & IP','KLEINMOND PRIMARY SCHOOL':'FP & IP',
+  'LUKHANYO PRIMARY SCHOOL':'FP & IP','MAXONIA NGK PRIMÊRE SKOOL':'FP & IP',
+  'MOUNT PLEASANT PRIMÊRE SKOOL':'FP & IP','PINEVIEW PRIMÊRE SKOOL':'FP & IP',
+  'QHAYIYA SECONDARY SCHOOL':'SP',
   "ST. MICHAEL'S EK PRIMÊRE SKOOL":'FP & IP','UMYEZO WAMA APILE HIGH SCHOOL':'SP',
   'UMYEZO WAMA APILE PRIMARY SCHOOL':'FP & IP','ZWELIHLE PRIMARY SCHOOL':'FP & IP',
   'BEREA MOR PRIMÊRE SKOOL':'FP & IP','BISSETSDRIFT AKADEMIE':'FP, IP & SP',
@@ -1131,7 +1789,8 @@ const ENROL_LOOKUP = {
   'B.F. OOSTHUIZEN PRIMÊRE SKOOL':{gr3:25,gr6:15,gr9:0},'BARRYDALE HOËRSKOOL':{gr3:19,gr6:33,gr9:52},
   'BONTEBOK PRIMÊRE SKOOL':{gr3:91,gr6:123,gr9:0},'BREDASDORP PRIMARY SCHOOL':{gr3:89,gr6:91,gr9:0},
   'BUFFELJAGSRIVIER LAERSKOOL':{gr3:15,gr6:17,gr9:0},'DE HEIDE PRIMARY SCHOOL':{gr3:225,gr6:228,gr9:0},
-  'ELIM MOR PRIMÊRE SKOOL':{gr3:24,gr6:18,gr9:0},'LEMOENSHOEK NGK PRIMÊRE SKOOL':{gr3:10,gr6:12,gr9:0},
+  'ELIM MOR PRIMÊRE SKOOL':{gr3:24,gr6:18,gr9:0},'INGOMSO LETHU PRIMARY SCHOOL':{gr3:160,gr6:228,gr9:0},
+  'KLEINFONTEIN PRIMÊRE SKOOL':{gr3:10,gr6:12,gr9:0},
   'MULLERSRUS PRIMÊRE SKOOL':{gr3:12,gr6:36,gr9:0},'OUPLAAS EK PRIMÊRE SKOOL':{gr3:9,gr6:11,gr9:0},
   'PROTEA PRIMÊRE SKOOL':{gr3:62,gr6:69,gr9:0},"ST. JOHN'S EK PRIMÊRE SKOOL":{gr3:14,gr6:0,gr9:0},
   'STRUISBAAI PRIMÊRE SKOOL':{gr3:50,gr6:40,gr9:0},'SUURBRAAK PRIMÊRE SKOOL':{gr3:36,gr6:41,gr9:0},
@@ -1140,7 +1799,7 @@ const ENROL_LOOKUP = {
   'ARIESKRAAL SSKV PRIMÊRE SKOOL':{gr3:13,gr6:13,gr9:0},'DE RUST FUTURA AKADEMIE':{gr3:65,gr6:86,gr9:116},
   'DENNEGEUR NGK PRIMÊRE SKOOL':{gr3:34,gr6:18,gr9:0},'GLEN ELGIN MOR PRIMÊRE SKOOL':{gr3:30,gr6:27,gr9:0},
   'HAWSTON PRIMÊRE SKOOL':{gr3:123,gr6:130,gr9:0},'HERMANUS PRIMARY SCHOOL':{gr3:149,gr6:164,gr9:0},
-  'INGOMSO LETHU PRIMARY SCHOOL':{gr3:160,gr6:228,gr9:0},'KATHLEEN MURRAY PRIMÊRE SKOOL':{gr3:177,gr6:140,gr9:0},
+  'KATHLEEN MURRAY PRIMÊRE SKOOL':{gr3:177,gr6:140,gr9:0},
   'KLEINMOND LAERSKOOL':{gr3:47,gr6:51,gr9:0},'KLEINMOND PRIMARY SCHOOL':{gr3:104,gr6:120,gr9:0},
   'LUKHANYO PRIMARY SCHOOL':{gr3:231,gr6:269,gr9:0},'MAXONIA NGK PRIMÊRE SKOOL':{gr3:19,gr6:26,gr9:0},
   'MOUNT PLEASANT PRIMÊRE SKOOL':{gr3:149,gr6:160,gr9:0},'PINEVIEW PRIMÊRE SKOOL':{gr3:156,gr6:155,gr9:0},
@@ -1181,6 +1840,91 @@ function enrichWithEmisLookup(s) {
     }
   }
 }
+
+// ================= ENHANCED WCED CLASS PARSING =================
+function parseClasses(txt, grade){
+  const g = String(grade||'').trim();
+  if(!g) return [];
+
+  const CLASS_ORDER = 'ABCDEFGH';
+  const ALL_LETTERS = ['A','B','C','D','E','F','G','H'];
+
+  // ── HELPER: given a position in txt, find the first Slaag-%/Pass % row
+  // and first Gemid-%/Ave % row after that position, extract their numbers,
+  // and return [{letter, pass, avg}, ...] mapped positionally A, B, C...
+  function extractClassRows(fromIdx) {
+    if (fromIdx < 0) return [];
+    const seg = txt.slice(fromIdx, fromIdx + 1200);
+
+    const passRx = /(?:Slaag[-\u2011]%|Pass\s*%)\s+([^\n]+)/i;
+    const avgRx  = /(?:Gemid[-\u2011]%|Ave\s*%)\s+([^\n]+)/i;
+    const passM  = seg.match(passRx);
+    const avgM   = seg.match(avgRx);
+    if (!passM || !avgM) return [];
+
+    const passNums = (passM[1].match(/\d+\.?\d*/g) || []).map(Number).filter(n => n >= 0 && n <= 100);
+    const avgNums  = (avgM[1].match(/\d+\.?\d*/g)  || []).map(Number).filter(n => n >= 0 && n <= 100);
+    if (!passNums.length) return [];
+
+    console.log(`[parseClasses] Row extract from ${fromIdx}: pass=[${passNums}] avg=[${avgNums}]`);
+
+    return passNums.map((p, i) => ({
+      letter: ALL_LETTERS[i] || null,
+      pass:   p,
+      avg:    avgNums[i] ?? null
+    })).filter(r => r.letter);
+  }
+
+  // ── MATH: anchor on "Prestasie per klas in Wiskunde" / "Performance by class in Mathematics"
+  const mathHeadRx = /Prestasie per klas in Wiskunde|Performance by class in Mathematics/i;
+  const mathHeadIdx = txt.search(mathHeadRx);
+  const mathRows = extractClassRows(mathHeadIdx);
+
+  // ── LANGUAGE: anchor on "Prestasie per klas in Taal" / "Performance by class in Language"
+  const langHeadRx = /Prestasie per klas in Taal|Performance by class in Language/i;
+  const langHeadIdx = txt.search(langHeadRx);
+  const langRows = extractClassRows(langHeadIdx);
+
+  // ── BUILD class list from math rows (gPass / gAvg)
+  const classMap = {};
+  mathRows.forEach(r => {
+    const name = `GR${g}${r.letter}`;
+    classMap[name] = {
+      name,
+      g1Pass: null, g1Avg: null,
+      g2Pass: null, g2Avg: null,
+      gPass:  r.pass,
+      gAvg:   r.avg,
+      lPass:  null,
+      lAvg:   null
+    };
+  });
+
+  // ── ATTACH language data (lPass / lAvg)
+  langRows.forEach(r => {
+    const name = `GR${g}${r.letter}`;
+    if (!classMap[name]) {
+      // Language has a class math didn't — add it
+      classMap[name] = { name, g1Pass:null, g1Avg:null, g2Pass:null, g2Avg:null, gPass:null, gAvg:null, lPass:null, lAvg:null };
+    }
+    classMap[name].lPass = r.pass;
+    classMap[name].lAvg  = r.avg;
+    console.log(`[parseClasses] ${name}: lPass=${r.pass} lAvg=${r.avg}`);
+  });
+
+  // ── SORT and return
+  const result = Object.values(classMap)
+    .filter(c => /^GR\d+[A-H]$/.test(c.name))
+    .sort((a, b) => {
+      const aL = a.name.match(/([A-H])$/)?.[1] || 'Z';
+      const bL = b.name.match(/([A-H])$/)?.[1] || 'Z';
+      return CLASS_ORDER.indexOf(aL) - CLASS_ORDER.indexOf(bL);
+    });
+
+  console.log(`[parseClasses] Final classes:`, result.map(c => `${c.name} M=${c.gPass} L=${c.lPass}`));
+  return result;
+}
+// ================= END ENHANCED CLASS PARSING =================
 
 function extract(txt,fname,file){
   const isAF=/Wiskunde|Taaluitslae|Slaagpersentasie|OBIS Nr|Graad \d Uitslae/i.test(txt);
@@ -1310,95 +2054,163 @@ function extract(txt,fname,file){
     }
   }
 
-  // ITEM ANALYSIS
-  s.mItems=parseItems(txt,'MATHEMATICS');
-  s.lItems=parseItems(txt,'LANGUAGE');
+  // ITEM ANALYSIS - Improved parser with both English and Afrikaans support
+  s.mItems = parseItems(txt, 'MATHEMATICS');
+  s.lItems = parseItems(txt, 'LANGUAGE');
 
-  // CLASSES
-  s._rawTxt = txt; // keep raw text for debug
-  s.classes=parseClasses(txt,s.grade);
+  // CLASSES - Use enhanced parser
+  s.classes = parseClasses(txt, s.grade);
+  
+  console.log(`[${s.name}] Grade ${s.grade}: Found ${s.classes.length} classes`, s.classes);
 
   return s;
 }
 
-function parseItems(txt, subject){
+// IMPROVED ITEM PARSER WITH BOTH AFRIKAANS AND ENGLISH SUPPORT
+function parseItems(txt, subject) {
   const items = [];
   const subjectAF = subject === 'MATHEMATICS' ? 'WISKUNDE' : 'TAAL';
-
-  // Find the section header - it spans two lines and may have sidebar text mixed in
-  // Look for the pattern: "PERSENTASIE LEERDERS WAT GRAAD N WISKUNDE ITEMS" or English equivalent
-  // Use a loose match that handles extra text on the same line
-  const headerRx = new RegExp(
-    '(?:PERSENTASIE LEERDERS WAT|PERCENTAGE OF LEARNERS ANSWERING)[^\n]*(?:' + subject + '|' + subjectAF + ')[^\n]*ITEMS',
-    'i'
-  );
-  const hm = headerRx.exec(txt);
-  if(!hm) return items;
-
-  // Extract a block from the header to the next section header or end-of-doc marker
-  const blockStart = hm.index;
-  const endRx = /(?:PERSENTASIE LEERDERS WAT|PERCENTAGE OF LEARNERS ANSWERING)[^\n]*(?:TAAL|WISKUNDE|MATHEMATICS|LANGUAGE)[^\n]*ITEMS|B WALTERS|DATUM:|DATE:/i;
-  endRx.lastIndex = blockStart + hm[0].length + 10;
-  const endMatch = endRx.exec(txt.slice(blockStart + 50));
-  const blockEnd = endMatch ? blockStart + 50 + endMatch.index : blockStart + 8000;
-  const block = txt.slice(blockStart, blockEnd);
-
-  // Each data row from pdfjs Y-grouping: "Concept name  88.2  11.8"
-  // Row ends with exactly two decimal numbers
-  const rowRx = /^(.+?)\s+([\d]+\.[\d]+)\s+([\d]+\.[\d]+)\s*$/;
-  const skipRx = /KONSEPTE|CONCEPTS|% VERKEERD|% KORREK|% INCORRECT|% CORRECT|BEANTWOORD|KORREK OF|ANSWERING|PERSENTASIE|PERCENTAGE|GRAAD|GRADE|WISKUNDE|MATHEMATICS|TAAL|LANGUAGE|ITEMS/i;
-
-  for(const raw of block.split('\n')){
-    const line = raw.trim();
-    if(!line || skipRx.test(line)) continue;
-    const m = line.match(rowRx);
-    if(m){
-      const name = m[1].trim();
-      // Strip any trailing sidebar text that got merged in (sidebar text is usually lowercase)
-      // Real concept names are mainly lowercase Afrikaans/English — keep as-is
-      const a = parseFloat(m[2]);
-      const b = parseFloat(m[3]);
-      if(name.length > 3 && !isNaN(a) && !isNaN(b) && (a + b) > 90 && (a + b) < 110){
-        // a+b should be ~100 (wrong% + correct% = 100%)
-        items.push({name, wrongPct: a, correctPct: b});
+  const subjectEN = subject === 'MATHEMATICS' ? 'MATHEMATICS' : 'LANGUAGE';
+  
+  console.log(`[parseItems] Looking for ${subject} (${subjectEN}/${subjectAF}) items...`);
+  
+  // Split the text by page markers
+  const pages = txt.split(/===== Page \d+ =====/);
+  
+  for (let pageIdx = 0; pageIdx < pages.length; pageIdx++) {
+    const page = pages[pageIdx];
+    
+    // Check if this page contains the subject (either English or Afrikaans)
+    const hasSubject = page.match(new RegExp(subjectAF, 'i')) || 
+                      page.match(new RegExp(subjectEN, 'i'));
+    
+    if (!hasSubject) continue;
+    
+    console.log(`[parseItems] Page ${pageIdx} contains ${subject}`);
+    
+    // Look for the item analysis header - try both English and Afrikaans patterns
+    const headerPatterns = [
+      // English: "PERCENTAGE OF LEARNERS ANSWERING GRADE 3 MATHEMATICS ITEMS CORRECTLY OR INCORRECTLY"
+      new RegExp(
+        `PERCENTAGE\\s+OF\\s+LEARNERS\\s+ANSWERING[\\s\\S]*?GRADE\\s+\\d+\\s+${subjectEN}[\\s\\S]*?ITEMS[\\s\\S]*?CORRECTLY\\s+OR\\s+INCORRECTLY`,
+        'i'
+      ),
+      // Afrikaans: "PERSENTASIE LEERDERS WAT GRAAD 3 WISKUNDE ITEMS KORREK OF VERKEERD BEANTWOORD HET"
+      new RegExp(
+        `PERSENTASIE\\s+LEERDERS\\s+WAT[\\s\\S]*?GRAAD\\s+\\d+\\s+${subjectAF}[\\s\\S]*?ITEMS[\\s\\S]*?KORREK\\s+OF\\s+VERKEERD\\s+BEANTWOORD`,
+        'i'
+      ),
+      // Look for the table headers
+      new RegExp(`CONCEPTS\\s+TESTED[\\s\\S]*?%\\s+INCORRECT\\s+ANSWER[\\s\\S]*?%\\s+CORRECT\\s+ANSWER`, 'i'),
+      new RegExp(`KONSEPTE\\s+GETOETS[\\s\\S]*?%\\s+VERKEERD\\s+BEANTWOORD[\\s\\S]*?%\\s+KORREK\\s+BEANTWOORD`, 'i')
+    ];
+    
+    let headerMatch = null;
+    for (const pattern of headerPatterns) {
+      headerMatch = pattern.exec(page);
+      if (headerMatch) {
+        console.log(`[parseItems] Found header with pattern: ${pattern}`);
+        break;
       }
     }
-  }
-
-  // Fallback for pdfminer-style extraction where columns are separate blocks
-  if(!items.length){
-    const concepts = [], wrongVals = [], correctVals = [];
-    let mode = 'concepts'; // 'concepts' | 'wrong' | 'correct'
-    for(const raw of block.split('\n')){
-      const line = raw.trim();
-      if(!line) continue;
-      if(/% VERKEERD|% INCORRECT/i.test(line)){ mode = 'wrong'; continue; }
-      if(/% KORREK|% CORRECT/i.test(line)){ mode = 'correct'; continue; }
-      if(/KONSEPTE GETOETS|CONCEPTS TESTED|BEANTWOORD|KORREK OF|ANSWERING|PERSENTASIE|PERCENTAGE/i.test(line)) continue;
-      if(/^\d+\.\d+$/.test(line)){
-        if(mode === 'wrong') wrongVals.push(+line);
-        else if(mode === 'correct') correctVals.push(+line);
-      } else if(mode === 'concepts' && line.length > 3 && !/^\d/.test(line)){
-        concepts.push(line);
+    
+    if (!headerMatch) {
+      // Try to find just the table structure without the full header
+      const tableHeaderMatch = page.match(/CONCEPTS\s+TESTED[\s\S]{0,50}% INCORRECT[\s\S]{0,50}% CORRECT/i);
+      if (tableHeaderMatch) {
+        console.log(`[parseItems] Found table header at index ${tableHeaderMatch.index}`);
+        headerMatch = tableHeaderMatch;
+      } else {
+        continue;
       }
     }
-    for(let i = 0; i < concepts.length; i++){
-      if(wrongVals[i] !== undefined && correctVals[i] !== undefined)
-        items.push({name: concepts[i], wrongPct: wrongVals[i], correctPct: correctVals[i]});
+    
+    // Extract block after header
+    const blockStart = headerMatch.index + headerMatch[0].length;
+    const blockEnd = Math.min(page.length, blockStart + 3000);
+    const block = page.slice(blockStart, blockEnd);
+    
+    const lines = block.split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0 && !l.match(/^\d+$/)); // Filter out standalone page numbers
+    
+    let inTable = false;
+    let foundItems = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Stop if we hit another header or page marker
+      if (line.match(/PERCENTAGE|PERSENTASIE|=====/i)) {
+        break;
+      }
+      
+      // Look for table headers to start capturing
+      if (line.match(/CONCEPTS\s+TESTED|KONSEPTE\s+GETOETS|% INCORRECT|% CORRECT|% VERKEERD|% KORREK/i)) {
+        inTable = true;
+        continue;
+      }
+      
+      if (!inTable) continue;
+      
+      // Try to match lines with concept name and two numbers
+      // This handles formats like: "Subtraction 80.1 19.9"
+      const numberMatch = line.match(/(.+?)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*$/);
+      if (numberMatch) {
+        const concept = numberMatch[1].trim();
+        const firstNum = parseFloat(numberMatch[2]);
+        const secondNum = parseFloat(numberMatch[3]);
+        
+        // Determine which is incorrect % and which is correct %
+        // Usually they add up to ~100
+        let incorrectPct, correctPct;
+        
+        if (Math.abs(firstNum + secondNum - 100) < 10) {
+          // They add to roughly 100
+          incorrectPct = firstNum;
+          correctPct = secondNum;
+        } else {
+          // If they don't add to 100, assume first is incorrect, second is correct
+          incorrectPct = firstNum;
+          correctPct = secondNum;
+        }
+        
+        // Validate the numbers are reasonable percentages (0-100)
+        if (!isNaN(incorrectPct) && !isNaN(correctPct) && 
+            incorrectPct >= 0 && incorrectPct <= 100 &&
+            correctPct >= 0 && correctPct <= 100) {
+          
+          // Check for duplicates
+          const existingItem = items.find(item => item.name === concept);
+          if (!existingItem) {
+            items.push({
+              name: concept,
+              wrongPct: incorrectPct,
+              correctPct: correctPct
+            });
+            console.log(`[parseItems] Found ${subject} item: ${concept} - incorrect: ${incorrectPct}%, correct: ${correctPct}%`);
+            foundItems = true;
+          }
+        }
+      }
+    }
+    
+    // If we found items on this page, break out of the page loop
+    if (foundItems) {
+      console.log(`[parseItems] Successfully found ${items.length} items for ${subject} on page ${pageIdx}`);
+      break;
     }
   }
-
+  
+  // Sort by incorrect percentage (highest first) - weakest concepts first
+  items.sort((a, b) => b.wrongPct - a.wrongPct);
+  
+  console.log(`[parseItems] Total items found for ${subject}: ${items.length}`);
+  
   return items;
 }
 
-function parseClasses(txt,grade){
-  // Direct call to V2 — V2 is defined later in this script but hoisting is fine for function declarations.
-  // (parseClassesV2 is defined as a function declaration, so it's hoisted and available here.)
-  return parseClassesV2(txt, grade);
-}
-
 /* ── FILTERS ── */
-
 function esc(s){
  return String(s||'').replace(/[&<>"]/g,ch=>({
   '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'
@@ -1409,7 +2221,6 @@ function parseSchoolSelectValue(v){
  if(!raw) return {emis:'', name:''};
  if(raw.startsWith('EMIS:')) return {emis:raw.slice(5), name:''};
  if(raw.startsWith('NAME:')) return {emis:'', name:raw.slice(5)};
- // Backward-compatible
  return {emis:'', name:raw};
 }
 function schoolMatches(s, sel){
@@ -1420,28 +2231,12 @@ function schoolMatches(s, sel){
 function refreshSchoolChoices(){
  const sel = document.getElementById('fsch');
  if(!sel || !window.Choices) return;
- // Preserve selection
  const prev = sel.value;
  if(SCH_CHOICES){ try{ SCH_CHOICES.destroy(); }catch(e){} SCH_CHOICES=null; }
- // Ensure the selected option is marked in DOM before Choices reads it
  if(prev){
   [...sel.options].forEach(o=>o.selected = (o.value===prev));
  }
  SCH_CHOICES = new Choices(sel, {
-  searchEnabled: true,
-  shouldSort: false,
-  searchPlaceholderValue: 'Type to search…'
- });
-}
-function refreshItChoices(){
- const sel = document.getElementById('it-school');
- if(!sel || !window.Choices) return;
- const prev = sel.value;
- if(IT_CHOICES){ try{ IT_CHOICES.destroy(); }catch(e){} IT_CHOICES=null; }
- if(prev){
-  [...sel.options].forEach(o=>o.selected = (o.value===prev));
- }
- IT_CHOICES = new Choices(sel, {
   searchEnabled: true,
   shouldSort: false,
   searchPlaceholderValue: 'Type to search…'
@@ -1453,6 +2248,9 @@ function populate(){
   const fc=document.getElementById('fc');
   fc.innerHTML='<option value="">All Circuits</option>';
   cirs.forEach(c=>fc.innerHTML+=`<option value="${c}">${c}</option>`);
+  const quints=[...new Set(ALL.map(s=>s.math.qLabel).filter(Boolean))].sort();
+  const fq=document.getElementById('fq');
+  if(fq){fq.innerHTML='<option value="">All Quintiles</option>';quints.forEach(q=>fq.innerHTML+=`<option value="${q}">${q}</option>`);}
   populateSchools();
 }
 
@@ -1460,7 +2258,6 @@ function populateSchools(){
   const c=(document.getElementById('fc')||{}).value||'';
   const g=(document.getElementById('fg')||{}).value||'';
   const pool=ALL.filter(s=>(!c||s.circuit===c)&&(!g||s.grade===g));
-  // Build unique school entries, preferring EMIS for value key
   const seen=new Map();
   pool.forEach(s=>{
     const val = s.emis ? ('EMIS:'+s.emis.trim()) : ('NAME:'+(s.name||s.fname||''));
@@ -1479,26 +2276,22 @@ function applyFilters(){
  c=document.getElementById('fc').value,
  g=document.getElementById('fg').value,
  l=document.getElementById('fl').value,
+ q=(document.getElementById('fq')||{}).value||'',
  scRaw=document.getElementById('fsch').value;
  const sc=parseSchoolSelectValue(scRaw);
- populateSchools(); // cascade school list based on circuit+grade
- FLT=ALL.filter(s=>(!c||s.circuit===c)&&(!g||s.grade===g)&&(!l||s.lang===l)&&schoolMatches(s, sc));
+ populateSchools();
+ FLT=ALL.filter(s=>(!c||s.circuit===c)&&(!g||s.grade===g)&&(!l||s.lang===l)&&(!q||s.math.qLabel===q)&&schoolMatches(s, sc));
  renderAll(y);
 }
 
-
 function clearFilters(){
  document.getElementById('fy').value='2025';
- ['fc','fg','fs','fl','fsch'].forEach(id=>document.getElementById(id).value='');
+ ['fc','fg','fs','fl','fq','fsch'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
  populateSchools();
  refreshSchoolChoices();
- // Reset item-analysis school dropdown too
- populateItSchools();
- refreshItChoices();
  FLT=[...ALL];
  renderAll('2025');
 }
-
 
 /* ── RENDER ALL ── */
 function renderAll(year = '2025'){
@@ -1507,7 +2300,7 @@ function renderAll(year = '2025'){
   renderSchools(year); 
   renderClasses_(CLS_GR);
   renderCircuits(year); 
-  populateItSchools(); renderItems_(IT_GR); 
+  renderItems_(IT_GR);
   renderTrends(); 
   renderCompare(year);
 }
@@ -1525,9 +2318,7 @@ function renderSummary(year = '2025'){
   const csel = document.getElementById('fc') ? document.getElementById('fc').value : '';
   const af = d.filter(s => s.lang === 'af').length;
   const en = d.filter(s => s.lang === 'en').length;
-  // Count unique schools (a school with Gr3+Gr6+Gr9 PDFs = 1 school, not 3)
   const uniqueSchools = new Set(d.map(s => s.emis && s.emis.trim() ? 'EMIS:'+s.emis.trim() : 'NAME:'+(s.name||s.fname||'?'))).size;
-  // Unique school lang breakdown
   const uniqueByKey = new Map();
   d.forEach(s => { const k = s.emis && s.emis.trim() ? 'EMIS:'+s.emis.trim() : 'NAME:'+(s.name||s.fname||'?'); if(!uniqueByKey.has(k)) uniqueByKey.set(k,s); });
   const uniqueAF = [...uniqueByKey.values()].filter(s=>s.lang==='af').length;
@@ -1537,7 +2328,6 @@ function renderSummary(year = '2025'){
                            (BENCH.district[6] && BENCH.district[6].district) ||
                            (BENCH.district[9] && BENCH.district[9].district) || 'OVERBERG';
 
-  // Helper: get locked value for a subject, returning {pass, avg} or null
   function locked(subject, gradeList) {
     // If a circuit is selected, use circuit-locked data; otherwise district
     if (csel) {
@@ -1547,20 +2337,18 @@ function renderSummary(year = '2025'){
     return getLockedDistrictPass(detectedDistrict, year, subject, gradeList);
   }
 
-  // Province benchmark for gap calculation
-  function provBench(subject, gradeList) {
+  function districtBench(subject, gradeList) {
     if (gradeList.length === 1) {
-      return WC_MASTER[year] && WC_MASTER[year][subject] && WC_MASTER[year][subject][gradeList[0]]
-        ? WC_MASTER[year][subject][gradeList[0]].pass : null;
+      const d = DISTRICT_LOCKED.OVERBERG[year]?.[subject]?.[gradeList[0]];
+      return d ? d.pass : null;
     }
-    const vals = gradeList.map(g => WC_MASTER[year] && WC_MASTER[year][subject] && WC_MASTER[year][subject][g]
-      ? WC_MASTER[year][subject][g].pass : null).filter(v => v !== null);
+    const vals = gradeList.map(g => DISTRICT_LOCKED.OVERBERG[year]?.[subject]?.[g]?.pass).filter(v => v != null);
     return vals.length ? avg(vals) : null;
   }
 
-  function gapChip(val, prov) {
-    if (!nn(val) || !nn(prov)) return '';
-    const g = +((val - prov).toFixed(1));
+  function gapChip(val, dist) {
+    if (!nn(val) || !nn(dist)) return '';
+    const g = +((val - dist).toFixed(1));
     return `<span class="chip ${g >= 0 ? 'cg2' : 'cr2'}">${g >= 0 ? '+' : ''}${g}% vs Prov</span>`;
   }
 
@@ -1573,17 +2361,19 @@ function renderSummary(year = '2025'){
     const m = locked('math', grades);
     const mPass = m ? m.pass : null;
     const mAvg  = m ? m.avg  : null;
-    const mProv = provBench('math', grades);
+    const mProvPass = provBench('math', 'pass', grades);
+    const mProvAvg  = provBench('math', 'avg',  grades);
     html += `<div class="sc cbl">
       <div class="sl">Mathematics Pass%</div>
       <div class="sv">${fp(mPass)}</div>
       <div class="ss">${scopeLabel} · ${sourceNote}</div>
-      ${gapChip(mPass, mProv)}
+      ${gapChip(mPass, mProvPass)}
     </div>`;
     html += `<div class="sc cy">
       <div class="sl">Mathematics Average%</div>
       <div class="sv">${fp(mAvg)}</div>
       <div class="ss">${scopeLabel} · ${sourceNote}</div>
+      ${gapChip(mAvg, mProvAvg)}
     </div>`;
   }
 
@@ -1591,75 +2381,30 @@ function renderSummary(year = '2025'){
     const l = locked('lang', grades);
     const lPass = l ? l.pass : null;
     const lAvg  = l ? l.avg  : null;
-    const lProv = provBench('lang', grades);
+    const lProvPass = provBench('lang', 'pass', grades);
+    const lProvAvg  = provBench('lang', 'avg',  grades);
     html += `<div class="sc cg">
       <div class="sl">Language Pass%</div>
       <div class="sv">${fp(lPass)}</div>
       <div class="ss">${scopeLabel} · ${sourceNote}</div>
-      ${gapChip(lPass, lProv)}
+      ${gapChip(lPass, lProvPass)}
     </div>`;
     html += `<div class="sc cp">
       <div class="sl">Language Average%</div>
       <div class="sv">${fp(lAvg)}</div>
       <div class="ss">${scopeLabel} · ${sourceNote}</div>
+      ${gapChip(lAvg, lProvAvg)}
     </div>`;
   }
 
-  // Province benchmark cards
-  if (showMath) {
-    const mProv = provBench('math', grades);
-    const mProvAvg = (() => {
-      if (grades.length === 1) return WC_MASTER[year] && WC_MASTER[year].math && WC_MASTER[year].math[grades[0]] ? WC_MASTER[year].math[grades[0]].avg : null;
-      const vals = grades.map(g => WC_MASTER[year] && WC_MASTER[year].math && WC_MASTER[year].math[g] ? WC_MASTER[year].math[g].avg : null).filter(v => v !== null);
-      return vals.length ? avg(vals) : null;
-    })();
-    html += `<div class="sc cr">
-      <div class="sl">Province Mathematics Pass%</div>
-      <div class="sv">${fp(mProv)}</div>
-      <div class="ss">Western Cape benchmark (locked)</div>
-    </div>`;
-    html += `<div class="sc cr">
-      <div class="sl">Province Mathematics Average%</div>
-      <div class="sv">${fp(mProvAvg)}</div>
-      <div class="ss">Western Cape benchmark (locked)</div>
-    </div>`;
-  }
-  if (showLang) {
-    const lProv = provBench('lang', grades);
-    const lProvAvg = (() => {
-      if (grades.length === 1) return WC_MASTER[year] && WC_MASTER[year].lang && WC_MASTER[year].lang[grades[0]] ? WC_MASTER[year].lang[grades[0]].avg : null;
-      const vals = grades.map(g => WC_MASTER[year] && WC_MASTER[year].lang && WC_MASTER[year].lang[g] ? WC_MASTER[year].lang[g].avg : null).filter(v => v !== null);
-      return vals.length ? avg(vals) : null;
-    })();
-    html += `<div class="sc cr">
-      <div class="sl">Province Language Pass%</div>
-      <div class="sv">${fp(lProv)}</div>
-      <div class="ss">Western Cape benchmark (locked)</div>
-    </div>`;
-    html += `<div class="sc cr">
-      <div class="sl">Province Language Average%</div>
-      <div class="sv">${fp(lProvAvg)}</div>
-      <div class="ss">Western Cape benchmark (locked)</div>
-    </div>`;
+  // Provincial benchmark helper
+  function provBench(subject, metric, gradeList) {
+    if (gradeList.length === 1) return WC_MASTER[year]?.[subject]?.[gradeList[0]]?.[metric] ?? null;
+    const vals = gradeList.map(g => WC_MASTER[year]?.[subject]?.[g]?.[metric]).filter(v => v != null);
+    return vals.length ? avg(vals) : null;
   }
 
   document.getElementById('sgrid').innerHTML = html;
-}
-
-function pchip(v, type){
-  if(!nn(v))return'';
-  let color, text;
-  if(type === 'learner') {
-    if(v >= 60) { color = 'cg2'; text = '✓ Above 60%'; }
-    else if(v >= 50) { color = 'cb2'; text = '~ Meets 50%'; }
-    else if(v >= 35) { color = 'cw2'; text = '⚠️ Below 50%'; }
-    else { color = 'cr2'; text = '✗ Critical'; }
-  } else {
-    if(v >= 50) { color = 'cg2'; text = '✓ Above 50%'; }
-    else if(v >= 35) { color = 'cb2'; text = '~ Approaching'; }
-    else { color = 'cr2'; text = '✗ Below 50%'; }
-  }
-  return`<span class="chip ${color}">${text}</span>`;
 }
 
 /* ── OVERVIEW ── */
@@ -1667,25 +2412,15 @@ function renderOverview(year = '2025'){
   const gsel = document.getElementById('fg') ? document.getElementById('fg').value : '';
   const perfWrap = document.getElementById('ov-perf-wrap');
   const chartsWrap = document.getElementById('ov-charts-wrap');
-  // Always show the performance table (grade-specific or all-grades)
+  
+  // Always show the systemic performance table (when a grade is selected or not)
+  // When "All Grades" is selected, the all-grades view is shown
   perfWrap.style.display = 'block';
   chartsWrap.style.display = 'none';
   renderPerfTable(year, gsel);
 }
 
-function renderOverviewCharts(year = '2025'){
-  const d=FLT.slice(0,30);
-  const mpData = d.map(x=> year==='2025' ? x.math.pass : x.mTrend.pass[year]);
-  const lpData = d.map(x=> year==='2025' ? x.lang_.pass : x.lTrend.pass[year]);
-  mkBar('ch-mp',d.map(x=>tr(x.name,17)),[{label:'M.Pass%',data:mpData,backgroundColor:d.map(x=>pc(x.math.pass, 'learner'))}],{indexAxis:'y'});
-  mkBar('ch-lp',d.map(x=>tr(x.name,17)),[{label:'L.Pass%',data:lpData,backgroundColor:d.map(x=>pc(x.lang_.pass, 'learner'))}],{indexAxis:'y'});
-  const ck=['0-19%','20-29%','30-39%','40-49%','50-59%','60-69%','70-79%','80-100%'];
-  mkDonut('ch-mc',ck,aggCats(FLT,'m'));
-  mkDonut('ch-lc',ck,aggCats(FLT,'l'));
-  renderQuintileCharts();
-}
-
-/* ── SYSTEMIC PERFORMANCE TABLE (WITH PROV DEV% AND DIS DEV% COLUMNS) ── */
+/* ── SYSTEMIC PERFORMANCE TABLE (WITH DIST DEV% and SBA DEV% columns) ── */
 function getPhase(name){
   const up = (name||'').toUpperCase().trim();
   for(const [k,v] of Object.entries(PHASE_LOOKUP)){
@@ -1716,14 +2451,13 @@ function cirNum(cirStr){
   return m ? parseInt(m[1]) : 99;
 }
 
-// Shorten school name for display
 function shortName(name){
   return (name||'')
     .replace(/PRIMÊRE SKOOL\b/gi,'PS').replace(/LAERSKOOL\b/gi,'LS')
     .replace(/HOËRSKOOL\b/gi,'HS').replace(/\bSEKONDÊR\b/gi,'SS')
     .replace(/PRIMARY SCHOOL\b/gi,'PS').replace(/HIGH SCHOOL\b/gi,'HS')
     .replace(/SECONDARY SCHOOL\b/gi,'SS').replace(/\bAKADEMIE\b/gi,'AK')
-    .replace(/\bSEKONDÊRE SKOOL\b/gi,'SS').replace(/\s{2,}/g,' ').trim();
+    .replace(/\s{2,}/g,' ').trim();
 }
 
 function renderPerfTable(year='2025', gradeStr=''){
@@ -1732,11 +2466,10 @@ function renderPerfTable(year='2025', gradeStr=''){
   const csel = (document.getElementById('fc')||{}).value||'';
   const titleEl = document.getElementById('ov-perf-title');
 
-  // Filter pool by circuit if set; for grade-specific, also filter by grade
   const pool = FLT.filter(s => !csel || s.circuit === csel);
 
   if(gradeStr){
-    // ── SINGLE GRADE VIEW (with Dis DEV% and Prov DEV% columns) ──
+    // ── SINGLE GRADE VIEW (with Dist DEV% and SBA DEV% columns) ──
     const grade = parseInt(gradeStr,10);
     if(titleEl) titleEl.textContent = `${y2} Systemic Performance: ${districtLabel.toUpperCase()} — Grade ${grade}`;
 
@@ -1758,14 +2491,14 @@ function renderPerfTable(year='2025', gradeStr=''){
         <th class="th-math">${y1}</th>
         <th class="th-math">${y2}</th>
         <th class="th-math">DEV</th>
-        <th class="th-math">Dis DEV%</th>
-        <th class="th-math">Prov DEV%</th>
+        <th class="th-math">Dist DEV%</th>
+        <th class="th-math">SBA DEV%</th>
         <th class="th-lang">${y0}</th>
         <th class="th-lang">${y1}</th>
         <th class="th-lang">${y2}</th>
         <th class="th-lang">DEV</th>
-        <th class="th-lang">Dis DEV%</th>
-        <th class="th-lang">Prov DEV%</th>
+        <th class="th-lang">Dist DEV%</th>
+        <th class="th-lang">SBA DEV%</th>
       </tr>
     `;
 
@@ -1775,28 +2508,31 @@ function renderPerfTable(year='2025', gradeStr=''){
       return ca!==cb ? ca-cb : (a.name||'').localeCompare(b.name||'');
     });
     let prevCir=null;
-    
-    // Get district benchmark for this grade and subject
-    const districtMath = getLockedDistrictPass(districtLabel, year, 'math', [grade]);
-    const districtLang = getLockedDistrictPass(districtLabel, year, 'lang', [grade]);
-    const districtMathPass = districtMath ? districtMath.pass : null;
-    const districtLangPass = districtLang ? districtLang.pass : null;
-    
     const rows = sorted.map(s=>{
       const cir=cirNum(s.circuit), isNew=cir!==prevCir; prevCir=cir;
       const phase=getPhase(s.name), enrol=getEnrol(s.name);
       const e3=enrol?(enrol.gr3||0):'–', e6=enrol?(enrol.gr6||0):'–', e9=enrol?(enrol.gr9||0):'–';
       const m23=s.mTrend?.pass?.[2023]??null, m24=s.mTrend?.pass?.[2024]??null, m25=s.mTrend?.pass?.[2025]??s.math.pass;
       const mDev=(nn(m24)&&nn(m25))?+((m25-m24).toFixed(1)):null;
-      const mProv = getProvincePass([grade], 'math', year);
-      const mProvDev = (nn(m25) && nn(mProv)) ? +((m25 - mProv).toFixed(1)) : null;
-      const mDisDev = (nn(m25) && nn(districtMathPass)) ? +((m25 - districtMathPass).toFixed(1)) : null;
+      
+      // Get District benchmark for Mathematics
+      const mDist = DISTRICT_LOCKED.OVERBERG[year]?.math?.[grade]?.pass || null;
+      const mDistDev = (nn(m25) && nn(mDist)) ? +((m25 - mDist).toFixed(1)) : null;
+      
+      // Get SBA rate for Mathematics
+      const mSbaRate = getSBARate(s.name, grade, 'math');
+      const mSbaDev = (nn(m25) && nn(mSbaRate)) ? +(mSbaRate - m25).toFixed(1) : null;
       
       const l23=s.lTrend?.pass?.[2023]??null, l24=s.lTrend?.pass?.[2024]??null, l25=s.lTrend?.pass?.[2025]??s.lang_.pass;
       const lDev=(nn(l24)&&nn(l25))?+((l25-l24).toFixed(1)):null;
-      const lProv = getProvincePass([grade], 'lang', year);
-      const lProvDev = (nn(l25) && nn(lProv)) ? +((l25 - lProv).toFixed(1)) : null;
-      const lDisDev = (nn(l25) && nn(districtLangPass)) ? +((l25 - districtLangPass).toFixed(1)) : null;
+      
+      // Get District benchmark for Language
+      const lDist = DISTRICT_LOCKED.OVERBERG[year]?.lang?.[grade]?.pass || null;
+      const lDistDev = (nn(l25) && nn(lDist)) ? +((l25 - lDist).toFixed(1)) : null;
+      
+      // Get SBA rate for Language
+      const lSbaRate = getSBARate(s.name, grade, 'lang');
+      const lSbaDev = (nn(l25) && nn(lSbaRate)) ? +(lSbaRate - l25).toFixed(1) : null;
       
       return `<tr class="${isNew?'cir-group-start':''}">
         <td class="cir-cell">${cir}</td>
@@ -1809,24 +2545,24 @@ function renderPerfTable(year='2025', gradeStr=''){
         <td class="num">${fv(m24)}</td>
         <td class="num">${fv(m25)}</td>
         <td class="num">${fd(mDev)}</td>
-        <td class="num">${fd(mDisDev)}</td>
-        <td class="num">${fd(mProvDev)}</td>
+        <td class="num">${fd(mDistDev)}</td>
+        <td class="num">${formatSBADev(m25, mSbaRate)}</td>
         <td class="num">${fv(l23)}</td>
         <td class="num">${fv(l24)}</td>
         <td class="num">${fv(l25)}</td>
         <td class="num">${fd(lDev)}</td>
-        <td class="num">${fd(lDisDev)}</td>
-        <td class="num">${fd(lProvDev)}</td>
+        <td class="num">${fd(lDistDev)}</td>
+        <td class="num">${formatSBADev(l25, lSbaRate)}</td>
       </tr>`;
     }).join('');
     const tbody = document.getElementById('tperf-body');
     if(tbody) tbody.innerHTML = rows || '<tr><td colspan="18" style="text-align:center;padding:2rem;color:var(--mu)">No data for this grade</td></tr>';
+    requestAnimationFrame(fixPerfSticky);
 
   } else {
-    // ── ALL GRADES VIEW (with Dis DEV% and Prov DEV% columns) ──
+    // ── ALL GRADES VIEW (with Dist DEV% and SBA DEV% columns) ──
     if(titleEl) titleEl.textContent = `${y2} Systemic Performance: ${districtLabel.toUpperCase()} — All Grades`;
 
-    // Build 3-row header for all grades view with Dis DEV% and Prov DEV% columns
     const thead = document.querySelector('#tperf thead');
     thead.innerHTML = `
       <tr>
@@ -1854,42 +2590,41 @@ function renderPerfTable(year='2025', gradeStr=''){
         <th class="th-math">${y1}</th>
         <th class="th-math">${y2}</th>
         <th class="th-math">DEV</th>
-        <th class="th-math">Dis DEV%</th>
-        <th class="th-math">Prov DEV%</th>
+        <th class="th-math">Dist DEV%</th>
+        <th class="th-math">SBA DEV%</th>
         <th class="th-lang">${y0}</th>
         <th class="th-lang">${y1}</th>
         <th class="th-lang">${y2}</th>
         <th class="th-lang">DEV</th>
-        <th class="th-lang">Dis DEV%</th>
-        <th class="th-lang">Prov DEV%</th>
+        <th class="th-lang">Dist DEV%</th>
+        <th class="th-lang">SBA DEV%</th>
         <th style="background:#1F497D">${y0}</th>
         <th style="background:#1F497D">${y1}</th>
         <th style="background:#1F497D">${y2}</th>
         <th style="background:#1F497D">DEV</th>
-        <th style="background:#1F497D">Dis DEV%</th>
-        <th style="background:#1F497D">Prov DEV%</th>
+        <th style="background:#1F497D">Dist DEV%</th>
+        <th style="background:#1F497D">SBA DEV%</th>
         <th style="background:#236b8e">${y0}</th>
         <th style="background:#236b8e">${y1}</th>
         <th style="background:#236b8e">${y2}</th>
         <th style="background:#236b8e">DEV</th>
-        <th style="background:#236b8e">Dis DEV%</th>
-        <th style="background:#236b8e">Prov DEV%</th>
+        <th style="background:#236b8e">Dist DEV%</th>
+        <th style="background:#236b8e">SBA DEV%</th>
         <th style="background:#1a6b52">${y0}</th>
         <th style="background:#1a6b52">${y1}</th>
         <th style="background:#1a6b52">${y2}</th>
         <th style="background:#1a6b52">DEV</th>
-        <th style="background:#1a6b52">Dis DEV%</th>
-        <th style="background:#1a6b52">Prov DEV%</th>
+        <th style="background:#1a6b52">Dist DEV%</th>
+        <th style="background:#1a6b52">SBA DEV%</th>
         <th style="background:#2e7d32">${y0}</th>
         <th style="background:#2e7d32">${y1}</th>
         <th style="background:#2e7d32">${y2}</th>
         <th style="background:#2e7d32">DEV</th>
-        <th style="background:#2e7d32">Dis DEV%</th>
-        <th style="background:#2e7d32">Prov DEV%</th>
+        <th style="background:#2e7d32">Dist DEV%</th>
+        <th style="background:#2e7d32">SBA DEV%</th>
       </tr>
     `;
 
-    // Group all records by school identity, merging grades
     const keyOf = s => s.emis&&s.emis.trim() ? 'EMIS:'+s.emis.trim() : 'NAME:'+(s.name||'')+'||'+(s.circuit||'');
     const groups = {};
     pool.forEach(s=>{
@@ -1904,22 +2639,6 @@ function renderPerfTable(year='2025', gradeStr=''){
       else if(g===9) groups[k].gr9=s;
     });
 
-    // Get district benchmarks for each grade
-    const districtMath3 = getLockedDistrictPass(districtLabel, year, 'math', [3]);
-    const districtMath6 = getLockedDistrictPass(districtLabel, year, 'math', [6]);
-    const districtMath9 = getLockedDistrictPass(districtLabel, year, 'math', [9]);
-    const districtLang3 = getLockedDistrictPass(districtLabel, year, 'lang', [3]);
-    const districtLang6 = getLockedDistrictPass(districtLabel, year, 'lang', [6]);
-    const districtLang9 = getLockedDistrictPass(districtLabel, year, 'lang', [9]);
-    
-    const districtMathPass = {3: districtMath3 ? districtMath3.pass : null,
-                              6: districtMath6 ? districtMath6.pass : null,
-                              9: districtMath9 ? districtMath9.pass : null};
-    const districtLangPass = {3: districtLang3 ? districtLang3.pass : null,
-                              6: districtLang6 ? districtLang6.pass : null,
-                              9: districtLang9 ? districtLang9.pass : null};
-
-    // Sort by circuit then name
     const schools = Object.values(groups).sort((a,b)=>{
       const ca=cirNum(a.circuit), cb=cirNum(b.circuit);
       return ca!==cb ? ca-cb : (a.name||'').localeCompare(b.name||'');
@@ -1933,38 +2652,49 @@ function renderPerfTable(year='2025', gradeStr=''){
 
       function grCols(s, gradeNum){
         if(!s) return `<td class="num val-none">–</td>`.repeat(12); // 12 columns per grade (6 math + 6 lang)
+        
         const m23=s.mTrend?.pass?.[2023]??null;
         const m24=s.mTrend?.pass?.[2024]??null;
         const m25=s.mTrend?.pass?.[2025]??s.math.pass;
         const mDev=(nn(m24)&&nn(m25))?+((m25-m24).toFixed(1)):null;
-        const mProv = getProvincePass([gradeNum], 'math', year);
-        const mProvDev = (nn(m25) && nn(mProv)) ? +((m25 - mProv).toFixed(1)) : null;
-        const mDisDev = (nn(m25) && nn(districtMathPass[gradeNum])) ? +((m25 - districtMathPass[gradeNum]).toFixed(1)) : null;
+        
+        // Get District benchmark for Mathematics
+        const mDist = DISTRICT_LOCKED.OVERBERG[year]?.math?.[gradeNum]?.pass || null;
+        const mDistDev = (nn(m25) && nn(mDist)) ? +((m25 - mDist).toFixed(1)) : null;
+        
+        // Get SBA rate for Mathematics
+        const mSbaRate = getSBARate(g.name, gradeNum, 'math');
+        const mSbaDev = (nn(m25) && nn(mSbaRate)) ? +(mSbaRate - m25).toFixed(1) : null;
         
         const l23=s.lTrend?.pass?.[2023]??null;
         const l24=s.lTrend?.pass?.[2024]??null;
         const l25=s.lTrend?.pass?.[2025]??s.lang_.pass;
         const lDev=(nn(l24)&&nn(l25))?+((l25-l24).toFixed(1)):null;
-        const lProv = getProvincePass([gradeNum], 'lang', year);
-        const lProvDev = (nn(l25) && nn(lProv)) ? +((l25 - lProv).toFixed(1)) : null;
-        const lDisDev = (nn(l25) && nn(districtLangPass[gradeNum])) ? +((l25 - districtLangPass[gradeNum]).toFixed(1)) : null;
         
-        // Return 12 cells: 6 math (2023,2024,2025,DEV,Dis DEV%,Prov DEV%) + 6 lang (2023,2024,2025,DEV,Dis DEV%,Prov DEV%)
+        // Get District benchmark for Language
+        const lDist = DISTRICT_LOCKED.OVERBERG[year]?.lang?.[gradeNum]?.pass || null;
+        const lDistDev = (nn(l25) && nn(lDist)) ? +((l25 - lDist).toFixed(1)) : null;
+        
+        // Get SBA rate for Language
+        const lSbaRate = getSBARate(g.name, gradeNum, 'lang');
+        const lSbaDev = (nn(l25) && nn(lSbaRate)) ? +(lSbaRate - l25).toFixed(1) : null;
+        
+        // Return 12 cells: 6 math + 6 lang
         return `<td class="num">${fv(m23)}</td>` +
                `<td class="num">${fv(m24)}</td>` +
                `<td class="num">${fv(m25)}</td>` +
                `<td class="num">${fd(mDev)}</td>` +
-               `<td class="num">${fd(mDisDev)}</td>` +
-               `<td class="num">${fd(mProvDev)}</td>` +
+               `<td class="num">${fd(mDistDev)}</td>` +
+               `<td class="num">${formatSBADev(m25, mSbaRate)}</td>` +
                `<td class="num">${fv(l23)}</td>` +
                `<td class="num">${fv(l24)}</td>` +
                `<td class="num">${fv(l25)}</td>` +
                `<td class="num">${fd(lDev)}</td>` +
-               `<td class="num">${fd(lDisDev)}</td>` +
-               `<td class="num">${fd(lProvDev)}</td>`;
+               `<td class="num">${fd(lDistDev)}</td>` +
+               `<td class="num">${formatSBADev(l25, lSbaRate)}</td>`;
       }
 
-      // Total columns: 6 fixed (CIR,PHASE,GR3,GR6,GR9,SCHOOL) + 36 data columns (12 per grade × 3 grades) = 42
+      // Total columns: 6 fixed + (12 columns × 3 grades) = 42
       return `<tr class="${isNew?'cir-group-start':''}">
         <td class="cir-cell">${cir}</td>
         <td class="phase-cell">${phase}</td>
@@ -1978,16 +2708,67 @@ function renderPerfTable(year='2025', gradeStr=''){
 
     const tbody = document.getElementById('tperf-body');
     if(tbody) tbody.innerHTML = rows || '<tr><td colspan="42" style="text-align:center;padding:2rem;color:var(--mu)">No data — upload PDFs to begin</td></tr>';
+    requestAnimationFrame(fixPerfSticky);
   }
+}
+
+/* ── Fix sticky left positions for #tperf cols 1–6 by measuring actual rendered widths ── */
+function fixPerfSticky(){
+  const table = document.getElementById('tperf');
+  if(!table) return;
+  const STICKY_COUNT = 6; // CIR, PHASE, GR3, GR6, GR9, SCHOOL NAME
+
+  // Use the last thead row — it always has the individual leaf cells
+  const theadRows = table.querySelectorAll('thead tr');
+  const lastTheadRow = theadRows[theadRows.length - 1];
+  if(!lastTheadRow) return;
+  const leafThs = [...lastTheadRow.querySelectorAll('th')];
+  if(leafThs.length < STICKY_COUNT) return;
+
+  // Build cumulative left offsets from real rendered widths
+  const lefts = [];
+  let cumulative = 0;
+  for(let i = 0; i < STICKY_COUNT; i++){
+    lefts.push(cumulative);
+    cumulative += leafThs[i].getBoundingClientRect().width;
+  }
+
+  // Tag thead cells (handle colspan/rowspan by tracking column index)
+  table.querySelectorAll('thead tr').forEach(row => {
+    let col = 0;
+    [...row.querySelectorAll('th')].forEach(th => {
+      if(col < STICKY_COUNT){
+        th.classList.add('sticky-col');
+        th.style.left = lefts[col] + 'px';
+        th.classList.toggle('sticky-col-last', col === STICKY_COUNT - 1);
+      } else {
+        th.classList.remove('sticky-col','sticky-col-last');
+        th.style.left = '';
+      }
+      col += (parseInt(th.getAttribute('colspan')) || 1);
+    });
+  });
+
+  // Tag tbody cells by positional index
+  table.querySelectorAll('tbody tr').forEach(row => {
+    [...row.querySelectorAll('td')].forEach((td, i) => {
+      if(i < STICKY_COUNT){
+        td.classList.add('sticky-col');
+        td.style.left = lefts[i] + 'px';
+        td.classList.toggle('sticky-col-last', i === STICKY_COUNT - 1);
+      } else {
+        td.classList.remove('sticky-col','sticky-col-last');
+        td.style.left = '';
+      }
+    });
+  });
 }
 
 function exportPerfTable(){
   const rows = [...document.querySelectorAll('#tperf tbody tr')];
   const hdrRows = [...document.querySelectorAll('#tperf thead tr')];
-  // Build header from last header row (column labels)
   const lastHdr = hdrRows[hdrRows.length-1];
   const headers = lastHdr ? [...lastHdr.querySelectorAll('th')].map(th=>'"'+th.innerText.trim().replace(/"/g,"'")+'"') : [];
-  // Prepend fixed labels for fixed cols if single-row header
   const lines = [headers.join(',')];
   rows.forEach(r=>{
     const cells = [...r.querySelectorAll('td')].map(td=>{
@@ -2009,7 +2790,6 @@ function aggCats(arr,sub){
 
 /* ── QUINTILE DISTRIBUTION CHARTS ── */
 function renderQuintileCharts(){
-  // Parse NQ label → numeric quintile 1–5
   const toQ = label => {
     if(!label) return null;
     const m = String(label).match(/(\d)/);
@@ -2019,14 +2799,13 @@ function renderQuintileCharts(){
   const quintiles = [1,2,3,4,5];
   const qLabels = quintiles.map(q => 'Q'+q);
   const qColors = [
-    'rgba(198,40,40,.8)',    // Q1 – red (most disadvantaged)
-    'rgba(237,108,2,.8)',    // Q2 – orange
-    'rgba(0,119,170,.8)',    // Q3 – blue
-    'rgba(31,73,125,.8)',    // Q4 – dark blue
-    'rgba(27,126,62,.8)',    // Q5 – green (least disadvantaged)
+    'rgba(198,40,40,.8)',
+    'rgba(237,108,2,.8)',
+    'rgba(0,119,170,.8)',
+    'rgba(31,73,125,.8)',
+    'rgba(27,126,62,.8)',
   ];
 
-  // For each quintile: compute average math pass % and language pass % across schools in that quintile
   const mathAvgs = quintiles.map(q => {
     const group = FLT.filter(s => toQ(s.math.qLabel) === q && nn(s.math.pass));
     return group.length ? +(group.reduce((sum,s)=>sum+s.math.pass,0)/group.length).toFixed(1) : null;
@@ -2116,8 +2895,8 @@ function renderSchools(year = '2025'){
   document.getElementById('scnt').textContent=`${FLT.length} schools`;
   document.getElementById('tb-sch').innerHTML=FLT.map(s=>{
     const lb=s.lang==='af'?'<span class="lbadge-af">AF</span>':'<span class="lbadge-en">EN</span>';
-    const mathProv = getProvincePass([parseInt(s.grade)], 'math', year);
-    const langProv = getProvincePass([parseInt(s.grade)], 'lang', year);
+    const mathDist = DISTRICT_LOCKED.OVERBERG[year]?.math?.[parseInt(s.grade)]?.pass || null;
+    const langDist = DISTRICT_LOCKED.OVERBERG[year]?.lang?.[parseInt(s.grade)]?.pass || null;
     const mathPass = year==='2025' ? s.math.pass : s.mTrend.pass[year];
     const langPass = year==='2025' ? s.lang_.pass : s.lTrend.pass[year];
     const mathAvg = year==='2025' ? s.math.avg : s.mTrend.avg[year];
@@ -2127,12 +2906,12 @@ function renderSchools(year = '2025'){
       <td class="tb2">${s.name}</td><td>${s.circuit}</td><td>Gr.${s.grade}</td><td>${lb}</td>
       <td class="tr">${hb(mathPass, 'learner')}</td><td class="tr">${fp(mathAvg)}</td>
       <td class="tr">${hb(langPass, 'learner')}</td><td class="tr">${fp(langAvg)}</td>
-      <td class="tr">${fp(mathProv)}</td><td class="tr">${fp(langProv)}</td>
+      <td class="tr">${fp(mathDist)}</td><td class="tr">${fp(langDist)}</td>
       <td class="tr">${s.math.qLabel||'–'}</td><td>${spill(mathPass, 'learner')}</td>
     </tr>`}).join('');
 }
 
-/* ── CLASSES ── */
+/* ── CLASSES - MODIFIED TO FLAT TABLE FORMAT ── */
 function clsGr(gr, btn){
   CLS_GR = gr;
   document.querySelectorAll('#cls-gps .gp').forEach(b => b.classList.remove('active'));
@@ -2141,116 +2920,101 @@ function clsGr(gr, btn){
 }
 
 function renderClasses_(gr){
-  // Apply circuit, school, language from main toolbar — but NOT grade (Classes has its own pills)
-  const csel2     = (document.getElementById('fc')  ||{}).value||'';
-  const schoolRaw = (document.getElementById('fsch')||{}).value||'';
+  const csel2 = (document.getElementById('fc') || {}).value || '';
+  const schoolRaw = (document.getElementById('fsch') || {}).value || '';
   const schoolSel = parseSchoolSelectValue(schoolRaw);
-  const lsel2     = (document.getElementById('fl')  ||{}).value||'';
+  const lsel2 = (document.getElementById('fl') || {}).value || '';
+  const y = (document.getElementById('fy') || {}).value || '2025';
+  
+  // Filter schools based on current filters
   const pool = ALL.filter(s =>
-    (!csel2        || s.circuit === csel2) &&
-    (!schoolRaw    || schoolMatches(s, schoolSel)) &&
-    (!lsel2        || s.lang    === lsel2)
+    (!csel2 || s.circuit === csel2) &&
+    (!schoolRaw || schoolMatches(s, schoolSel)) &&
+    (!lsel2 || s.lang === lsel2)
   );
-  const allWithClasses = pool.filter(s => s.classes && s.classes.length > 0);
-  const noClasses = pool.filter(s => !s.classes || s.classes.length === 0);
-  console.log('[CLS DEBUG] ALL:',ALL.length,'pool:',pool.length,'withClasses:',allWithClasses.length,'noClasses:',noClasses.length);
-  if(noClasses.length) console.log('[CLS DEBUG] Schools with NO classes:', noClasses.map(s=>s.name+'(gr'+s.grade+',emis:'+s.emis+')'));
 
-  // ── VISIBLE DEBUG: show raw pdfjs text around key sections ──
-  const debugEl = document.getElementById('cls-debug');
-  if(debugEl && noClasses.length > 0){
-    const debugLines = noClasses.map(s => {
-      const txt = s._rawTxt || '(no _rawTxt stored on object)';
-      const glIdx = txt.search(/Graadvlak\s+prestasie\s+per\s+klas/i);
-      const perfIdx = txt.search(/Prestasie\s+per\s+klas\s+in\s+Wiskunde/i);
-      const seg1 = glIdx > -1 ? JSON.stringify(txt.slice(glIdx, glIdx+400)) : '(Graadvlak NOT FOUND in text)';
-      const seg2 = perfIdx > -1 ? JSON.stringify(txt.slice(perfIdx, perfIdx+300)) : '(Prestasie per klas NOT FOUND)';
-      const numLines = txt.split('\n').map((l,i)=>({i,l}))
-        .filter(({l})=>/\d+\.\d+/.test(l)||/Slaag|Gemid|Klas|GR\d/i.test(l))
-        .map(({i,l})=>i+': '+JSON.stringify(l)).join('\n');
-      return `SCHOOL: ${s.name} | grade:${s.grade} | emis:${s.emis} | textLen:${txt.length}\n`+
-             `GRAADVLAK idx=${glIdx}:\n${seg1}\n\n`+
-             `PRESTASIE PER KLAS idx=${perfIdx}:\n${seg2}\n\n`+
-             `ALL NUMERIC/CLASS LINES:\n${numLines}`;
-    }).join('\n\n' + '='.repeat(60) + '\n\n');
-    debugEl.style.cssText='display:block;white-space:pre-wrap;font-family:monospace;font-size:11px;background:#111;color:#0f0;padding:12px;border-radius:6px;max-height:600px;overflow-y:auto;margin:8px 0';
-    debugEl.textContent = debugLines;
-  } else if(debugEl){
-    debugEl.style.display='none';
-  }
-
-  // Group ALL grades together per school first
-  const keyOf = s => {
-    if(s.emis && s.emis.trim()) return 'EMIS:' + s.emis.trim();
-    const nm = (s.name||'').trim();
-    return (nm || s.fname || 'UNKNOWN') + '||' + (s.circuit||'');
-  };
-  const groups = {};
-  allWithClasses.forEach(s => {
-    const k = keyOf(s);
-    if(!groups[k]) groups[k] = {name: s.name||s.fname||'Unknown School', circuit: s.circuit, emis: s.emis||'', items: []};
-    // Avoid duplicate grade entries
-    if(!groups[k].items.find(x => String(x.grade) === String(s.grade)))
-      groups[k].items.push(s);
+  // Collect all class entries across all schools and grades
+  const classEntries = [];
+  
+  pool.forEach(school => {
+    // Skip if no classes or grade doesn't match selected grade filter
+    if (!school.classes || school.classes.length === 0) return;
+    if (gr && String(school.grade) !== String(gr)) return;
+    
+    // For each class in the school
+    school.classes.forEach(cls => {
+      // Get the pass and avg for the selected year
+      let mathPass = null, mathAvg = null, langPass = null, langAvg = null;
+      
+      if (y === '2025') {
+        mathPass = school.math?.pass;
+        mathAvg = school.math?.avg;
+        langPass = school.lang_?.pass;
+        langAvg = school.lang_?.avg;
+      } else {
+        mathPass = school.mTrend?.pass?.[y];
+        mathAvg = school.mTrend?.avg?.[y];
+        langPass = school.lTrend?.pass?.[y];
+        langAvg = school.lTrend?.avg?.[y];
+      }
+      
+      // Use class-specific data if available, otherwise fall back to school-level
+      const finalMathPass = cls.gPass !== null ? cls.gPass : mathPass;
+      const finalMathAvg = cls.gAvg !== null ? cls.gAvg : mathAvg;
+      const finalLangPass = (cls.lPass !== null && cls.lPass !== undefined) ? cls.lPass : langPass;
+      const finalLangAvg  = (cls.lAvg  !== null && cls.lAvg  !== undefined) ? cls.lAvg  : langAvg;
+      
+      classEntries.push({
+        schoolName: school.name || 'Unknown',
+        circuit: school.circuit || 'Unknown',
+        grade: school.grade || '?',
+        className: cls.name || 'Unknown',
+        mathPass: finalMathPass,
+        mathAvg: finalMathAvg,
+        langPass: finalLangPass,
+        langAvg: finalLangAvg
+      });
+    });
   });
 
-  // Now filter: if a grade is selected, only show schools that HAVE that grade's data
-  // but still render all grades for those schools
-  let schools = Object.values(groups)
-    .map(g => ({...g, items: g.items.sort((a,b) => (+a.grade||0) - (+b.grade||0))}))
-    .sort((a,b) => a.name.localeCompare(b.name));
+  // Sort entries: by school name, then grade, then class name
+  classEntries.sort((a, b) => {
+    if (a.schoolName !== b.schoolName) return a.schoolName.localeCompare(b.schoolName);
+    if (a.grade !== b.grade) return parseInt(a.grade) - parseInt(b.grade);
+    return (a.className || '').localeCompare(b.className || '');
+  });
 
-  if(gr) schools = schools.filter(g => g.items.some(s => String(s.grade) === String(gr)));
-  if(schoolRaw) schools = schools.filter(g => g.items.some(s => schoolMatches(s, schoolSel)));
+  // Generate HTML for the table
+  const tbody = document.getElementById('classes-table-body');
+  if (!tbody) return;
 
-  const el = document.getElementById('cls-cont');
-  if(!schools.length){
-    el.innerHTML = '<div class="empty"><h3>No Class Data</h3><p>Class breakdown data will appear here when available in the uploaded PDFs.</p></div>';
+  if (classEntries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--mu)">No class data available for the selected filters</td></tr>';
     return;
   }
 
-  el.innerHTML = schools.map(g => {
-    const gradesList = [...new Set(g.items.map(x => x.grade).filter(Boolean))];
-    const gradeLabel = gradesList.length ? ('Gr. ' + gradesList.join(', ')) : '';
+  let html = '';
+  classEntries.forEach(entry => {
+    // Determine color classes based on pass percentages
+    const mathPassClass = entry.mathPass !== null ? 
+      (entry.mathPass >= 60 ? 'pass-high' : (entry.mathPass >= 50 ? 'pass-mid' : 'pass-low')) : '';
+    const langPassClass = entry.langPass !== null ? 
+      (entry.langPass >= 60 ? 'pass-high' : (entry.langPass >= 50 ? 'pass-mid' : 'pass-low')) : '';
 
-    const sections = g.items.map(s => {
-      const hasYearCols = s.classes[0] && nn(s.classes[0].g1Pass);
-      const thead = hasYearCols
-        ? `<thead>
-             <tr>
-               <th rowspan="2">Class</th>
-               <th colspan="2">2023</th>
-               <th colspan="2">2024</th>
-               <th colspan="2">2025</th>
-             </tr>
-             <tr>
-               <th>Pass%</th><th>Avg%</th>
-               <th>Pass%</th><th>Avg%</th>
-               <th>Pass%</th><th>Avg%</th>
-             </tr>
-           </thead>`
-        : `<thead><tr><th>Class</th><th>Pass%</th><th>Avg%</th></tr></thead>`;
+    html += `<tr>
+      <td class="tb2">${entry.schoolName}</td>
+      <td>${entry.circuit}</td>
+      <td>Gr.${entry.grade}</td>
+      <td class="tb2">${entry.className}</td>
+      <td class="tr ${mathPassClass}">${fp(entry.mathPass)}</td>
+      <td class="tr">${fp(entry.mathAvg)}</td>
+      <td class="tr ${langPassClass}">${fp(entry.langPass)}</td>
+      <td class="tr">${fp(entry.langAvg)}</td>
+    </tr>`;
+  });
 
-      const rows = s.classes.map(c => `<tr>
-        <td class="tb2">${c.name}</td>
-        ${hasYearCols
-          ? `<td class="tr">${fp(c.g1Pass)}</td><td class="tr">${fp(c.g1Avg)}</td>
-             <td class="tr">${fp(c.g2Pass)}</td><td class="tr">${fp(c.g2Avg)}</td>
-             <td class="tr">${hb(c.gPass,'learner')}</td><td class="tr">${fp(c.gAvg)}</td>`
-          : `<td class="tr">${hb(c.gPass,'learner')}</td><td class="tr">${fp(c.gAvg)}</td>`}
-      </tr>`).join('');
-
-      return `<div class="shead">Grade ${s.grade}</div>
-              <div class="tw"><table class="clsTbl">${thead}<tbody>${rows}</tbody></table></div>`;
-    }).join('');
-
-    return `<div class="panel" style="margin-bottom:1rem">
-              <div class="ptitle">${g.name}<span class="psub">${g.circuit}${gradeLabel ? ' · ' + gradeLabel : ''}</span></div>
-              ${sections}
-            </div>`;
-  }).join('');
+  tbody.innerHTML = html;
 }
-
 
 /* ── CIRCUITS ── */
 function renderCircuits(year = '2025'){
@@ -2262,11 +3026,9 @@ function renderCircuits(year = '2025'){
                            (BENCH.district[9] && BENCH.district[9].district) || 'OVERBERG';
 
   const st = Object.entries(by).map(([n, a]) => {
-    // Use locked PDF circuit benchmarks as primary source
     const mLocked = getLockedCircuitPass(detectedDistrict, n, year, 'math', grades);
     const lLocked = getLockedCircuitPass(detectedDistrict, n, year, 'lang', grades);
 
-    // Fall back to simple school average (never use weightedAvg — no learner counts)
     const mpA = mLocked ? mLocked.pass : avg(a.map(s => year==='2025' ? s.math.pass  : s.mTrend.pass[year]).filter(nn));
     const maA = mLocked ? mLocked.avg  : avg(a.map(s => year==='2025' ? s.math.avg   : s.mTrend.avg[year]).filter(nn));
     const lpA = lLocked ? lLocked.pass : avg(a.map(s => year==='2025' ? s.lang_.pass : s.lTrend.pass[year]).filter(nn));
@@ -2299,111 +3061,358 @@ function renderCircuits(year = '2025'){
 }
 
 
-/* ── LEARNING AREAS ── */
-function arGr(gr,btn){AR_GR=gr;document.querySelectorAll('#ar-gps .gp').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderAreas(gr)}
-function renderAreas(gr){
-  const _cir=(document.getElementById('fc')||{}).value||'';
-  const arr=ALL.filter(s=>s.grade===gr&&(!_cir||s.circuit===_cir));
-  const magg=aggAreas(arr,'mAreas'), lagg=aggAreas(arr,'lAreas');
-  mkBar('ch-mar',magg.map(a=>a.name),[
-    {label:'Pass% 2025',data:magg.map(a=>a.p25),backgroundColor:'rgba(0,20,137,.8)'}
-  ],{});
-  mkBar('ch-lar',lagg.map(a=>a.name),[
-    {label:'Pass% 2025',data:lagg.map(a=>a.p25),backgroundColor:'rgba(27,126,62,.8)'}
-  ],{});
-  if(magg.length){
-    mkLine('ch-mat',['2023','2024','2025'],magg.map(a=>({
-      label:a.name,data:[a.p23,a.p24,a.p25],borderColor:sc2(a.name),fill:false,tension:.3,pointRadius:4
-    })));
+/* ── ITEMS (Unified lists with English headings, centered) ── */
+function itGr(gr,btn){
+  IT_GR=gr;
+  document.querySelectorAll('#it-gps .gp').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#bottom-gps .gp').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  // Update the grade display in titles
+  document.getElementById('math-grade').textContent = gr;
+  document.getElementById('lang-grade').textContent = gr;
+  
+  renderItems_(gr);
+}
+
+function showTab(n,btn){
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`tab-${n}`).classList.add('active');btn.classList.add('active');
+  
+  // Show/hide bottom toolbar based on tab
+  const bottomToolbar = document.getElementById('bottom-toolbar');
+  if (n === 'items') {
+    bottomToolbar.style.display = 'flex';
+  } else {
+    bottomToolbar.style.display = 'none';
   }
-}
-function aggAreas(arr,key){
-  const map={};
-  arr.forEach(s=>(s[key]||[]).forEach(a=>{
-    if(!map[a.name])map[a.name]={name:a.name,p23s:[],p24s:[],p25s:[]};
-    map[a.name].p23s.push(a.p23);map[a.name].p24s.push(a.p24);map[a.name].p25s.push(a.p25);
-  }));
-  return Object.values(map).map(m=>({name:m.name,p23:avg(m.p23s),p24:avg(m.p24s),p25:avg(m.p25s)}));
-}
-
-/* ── ITEMS ── */
-function populateItSchools(){
- const sel = document.getElementById('it-school');
- if(!sel) return;
- const prev = sel.value;
- const cir = (document.getElementById('fc')||{}).value||'';
- const gr = IT_GR || '3';
- const pool = ALL.filter(s => s.grade === gr && (!cir || s.circuit === cir) &&
-  ((s.mItems && s.mItems.length > 0) || (s.lItems && s.lItems.length > 0)));
- const map = new Map();
- pool.forEach(s=>{
-  const hasEmis = (s.emis && String(s.emis).trim().length);
-  const key = hasEmis ? ('EMIS:'+String(s.emis).trim()) : ('NAME:'+s.name);
-  if(!map.has(key)){
-   const emis = hasEmis ? String(s.emis).trim() : '';
-   const name = s.name;
-   const value = hasEmis ? ('EMIS:'+emis) : ('NAME:'+name);
-   const label = hasEmis ? (emis+' – '+name) : name;
-   map.set(key,{emis,name,value,label});
-  }
- });
- const list=[...map.values()].sort((a,b)=>{
-  const ae = a.emis ? parseInt(a.emis,10) : null;
-  const be = b.emis ? parseInt(b.emis,10) : null;
-  const aHas = ae!==null && !isNaN(ae);
-  const bHas = be!==null && !isNaN(be);
-  if(aHas && bHas && ae!==be) return ae-be;
-  if(aHas!==bHas) return aHas ? -1 : 1;
-  return (a.name||'').localeCompare(b.name||'');
- });
- sel.innerHTML = '<option value="">All Schools</option>' +
-  list.map(o=>`<option value="${esc(o.value)}"${o.value===prev?' selected':''}>${esc(o.label)}</option>`).join('');
- refreshItChoices();
+  
+  const y=(document.getElementById('fy')||{}).value||'2025';
+  if(n==='overview')renderOverview(y);
+  if(n==='trends')renderTrends();
+  if(n==='items')renderItems_(IT_GR);
+  if(n==='classes')renderClasses_(CLS_GR);
+  if(n==='compare')renderRanking();
 }
 
-
-
-function itGr(gr,btn){IT_GR=gr;document.querySelectorAll('#it-gps .gp').forEach(b=>b.classList.remove('active'));btn.classList.add('active');populateItSchools();renderItems_(gr)}
 function renderItems_(gr){
-  const _cir2=(document.getElementById('fc')||{}).value||'';
-  const _sch2=(document.getElementById('it-school')||{}).value||'';
-  const arr=ALL.filter(s=>s.grade===gr&&(!_cir2||s.circuit===_cir2)&&(!_sch2||s.name===_sch2));
-  const ma=aggItems(arr,'mItems').sort((a,b)=>b.wrongPct-a.wrongPct);
-  const la=aggItems(arr,'lItems').sort((a,b)=>b.wrongPct-a.wrongPct);
-  document.getElementById('im-w').innerHTML=iCards(ma.slice(0,10));
-  document.getElementById('im-s').innerHTML=iCards([...ma].reverse().slice(0,10));
-  document.getElementById('il-w').innerHTML=iCards(la.slice(0,8));
-  document.getElementById('il-s').innerHTML=iCards([...la].reverse().slice(0,8));
+  const _cir2 = (document.getElementById('fc')||{}).value||'';
+  const _schoolRaw = (document.getElementById('fsch')||{}).value||'';
+  const _schoolSel = parseSchoolSelectValue(_schoolRaw);
+  
+  console.log(`[renderItems] Grade: ${gr}, Circuit: ${_cir2}, School: ${_schoolRaw}`);
+  
+  const arr = ALL.filter(s => 
+    s.grade === gr && 
+    (!_cir2 || s.circuit === _cir2) &&
+    schoolMatches(s, _schoolSel)
+  );
+  
+  console.log(`[renderItems] Found ${arr.length} schools matching filters`);
+  
+  // Get all items for each subject and sort by wrong percentage
+  const ma = aggItems(arr, 'mItems').sort((a, b) => b.wrongPct - a.wrongPct);
+  const la = aggItems(arr, 'lItems').sort((a, b) => b.wrongPct - a.wrongPct);
+  
+  console.log(`[renderItems] Math items: ${ma.length}, Lang items: ${la.length}`);
+  
+  // Render unified lists
+  document.getElementById('im-items').innerHTML = createItemTable(ma);
+  document.getElementById('il-items').innerHTML = createItemTable(la);
 }
-function aggItems(arr,key){
-  const m={};
-  arr.forEach(s=>(s[key]||[]).forEach(it=>{
-    if(!m[it.name])m[it.name]={name:it.name,ws:[],cs:[]};
-    m[it.name].ws.push(it.wrongPct);m[it.name].cs.push(it.correctPct);
+
+function createItemTable(items) {
+  if (!items.length) {
+    return '<div class="empty"><p>No item data available for this grade.</p></div>';
+  }
+  
+  let html = '<table class="item-table">';
+  html += '<thead><tr><th>CONCEPTS TESTED</th><th>% INCORRECT</th><th>% CORRECT</th></tr></thead>';
+  html += '<tbody>';
+  
+  items.forEach(item => {
+    html += `<tr>
+      <td class="concept">${item.name}</td>
+      <td class="wrong">${item.wrongPct.toFixed(1)}%</td>
+      <td class="correct">${item.correctPct.toFixed(1)}%</td>
+    </tr>`;
+  });
+  
+  html += '</tbody></table>';
+  return html;
+}
+
+function aggItems(arr, key) {
+  const m = {};
+  arr.forEach(s => (s[key] || []).forEach(it => {
+    if (!m[it.name]) {
+      m[it.name] = { name: it.name, ws: [], cs: [] };
+    }
+    m[it.name].ws.push(it.wrongPct);
+    m[it.name].cs.push(it.correctPct);
   }));
-  return Object.values(m).map(x=>({name:x.name,wrongPct:avg(x.ws),correctPct:avg(x.cs)}));
-}
-function iCards(items){
-  if(!items.length)return'<div class="empty"><p>No item data for this grade.</p></div>';
-  return`<div class="igrid">${items.map(it=>`<div class="icard">
-    <div class="iname">${it.name}</div>
-    <div class="ibar"><div class="ibc" style="width:${it.correctPct||0}%"></div><div class="ibw" style="width:${it.wrongPct||0}%"></div></div>
-    <div class="ipcts"><span class="iok">✓ ${fp(it.correctPct)} correct</span><span class="ibad">✗ ${fp(it.wrongPct)} incorrect</span></div>
-  </div>`).join('')}</div>`;
+  
+  return Object.values(m).map(x => ({
+    name: x.name,
+    wrongPct: avg(x.ws),
+    correctPct: avg(x.cs)
+  }));
 }
 
 /* ── TRENDS ── */
+const TREND_PALETTE = [
+  '#e6194b','#3cb44b','#4363d8','#f58231','#911eb4',
+  '#42d4f4','#f032e6','#bfef45','#fabed4','#469990',
+  '#dcbeff','#9A6324','#fffac8','#800000','#aaffc3',
+  '#808000','#ffd8b1','#000075','#a9a9a9','#c0c0c0',
+  '#e6beff','#0082c8','#aa6e28','#808080','#d2f53c',
+  '#fabebe','#008080'
+];
+function trendColor(i){ return TREND_PALETTE[i % TREND_PALETTE.length]; }
+
+// Grade colours for multi-grade district/province views
+const GRADE_COLORS = { '3':'#001489', '6':'#1b5c8a', '9':'#0d4f3c' };
+const GRADE_COLORS_PASS = { '3':'#001489', '6':'#1F497D', '9':'#0d4f3c' };
+const GRADE_COLORS_AVG  = { '3':'rgba(0,20,137,.45)', '6':'rgba(31,73,125,.45)', '9':'rgba(13,79,60,.45)' };
+
+let TREND_VIEW  = 'schools';   // 'schools' | 'benchmark'
+let TREND_GRADE = 'all';       // 'all' | '3' | '6' | '9'
+
+function setTrendView(v, btn){
+  TREND_VIEW = v;
+  document.querySelectorAll('#trend-view-gps .gp').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // Collapse all open tables on view switch
+  ['tdt-tmp','tdt-tlp','tdt-tma','tdt-tla'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  document.querySelectorAll('.trend-tbl-toggle').forEach(b=>b.textContent='▶ Show data table');
+  renderTrends();
+}
+function setTrendGrade(g, btn){
+  TREND_GRADE = g;
+  document.querySelectorAll('#trend-grade-gps .gp').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTrends();
+}
+
 function renderTrends(){
-  const yrs=['2023','2024','2025'],d=FLT.slice(0,18);
-  mkLine('ch-tmp',yrs,d.map(s=>({label:tr(s.name,20),data:yrs.map(y=>s.mTrend.pass[y]||null),borderColor:sc2(s.name),fill:false,tension:.3,pointRadius:4})));
-  mkLine('ch-tlp',yrs,d.map(s=>({label:tr(s.name,20),data:yrs.map(y=>s.lTrend.pass[y]||null),borderColor:sc2(s.name),fill:false,tension:.3,pointRadius:4})));
-  mkLine('ch-tma',yrs,d.map(s=>({label:tr(s.name,20),data:yrs.map(y=>s.mTrend.avg[y]||null),borderColor:sc2(s.name),fill:false,tension:.3,pointRadius:3})));
-  mkLine('ch-tla',yrs,d.map(s=>({label:tr(s.name,20),data:yrs.map(y=>s.lTrend.avg[y]||null),borderColor:sc2(s.name),fill:false,tension:.3,pointRadius:3})));
+  const yrs = ['2023','2024','2025'];
+  const grades = TREND_GRADE === 'all' ? [3,6,9] : [parseInt(TREND_GRADE)];
+  const gradeStr = ' · ' + grades.map(g=>'Gr.'+g).join(', ');
+
+  // Update subtitles on all 4 charts
+  ['trend-grade-label-math','trend-grade-label-lang','trend-grade-label-mav','trend-grade-label-lav']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=gradeStr; });
+
+  if(TREND_VIEW === 'schools'){
+    _renderTrendSchools(yrs, grades);
+  } else {
+    _renderTrendBenchmark(yrs, grades);
+  }
+}
+
+/* Schools view: one line per school (up to 18), with district reference lines overlaid */
+function _renderTrendSchools(yrs, grades){
+  const gradeFilter = grades.length === 3 ? null : grades[0];
+  const pool = gradeFilter
+    ? FLT.filter(s => parseInt(s.grade) === gradeFilter)
+    : FLT;
+  const d = pool.slice(0, 18);
+
+  function schoolDatasets(key, subKey){
+    return d.map((s,i)=>({
+      label: 'Gr.'+s.grade+' '+tr(s.name,18),
+      data: yrs.map(y => (key==='pass'
+        ? (s.mTrend?.pass?.[y] ?? (y==='2025'?s.math.pass:null))
+        : (s.mTrend?.avg?.[y]  ?? (y==='2025'?s.math.avg:null))
+      )),
+      borderColor: trendColor(i), backgroundColor: trendColor(i),
+      fill:false, tension:.3, pointRadius:4, borderWidth:2,
+      _school: true
+    }));
+  }
+  function schoolDatasetsL(key){
+    return d.map((s,i)=>({
+      label: 'Gr.'+s.grade+' '+tr(s.name,18),
+      data: yrs.map(y => (key==='pass'
+        ? (s.lTrend?.pass?.[y] ?? (y==='2025'?s.lang_.pass:null))
+        : (s.lTrend?.avg?.[y]  ?? (y==='2025'?s.lang_.avg:null))
+      )),
+      borderColor: trendColor(i), backgroundColor: trendColor(i),
+      fill:false, tension:.3, pointRadius:4, borderWidth:2,
+      _school: true
+    }));
+  }
+
+  // District reference lines per grade
+  function districtLines(subj, metric){
+    return grades.map(g => {
+      const data = yrs.map(y => {
+        const d = DISTRICT_LOCKED.OVERBERG?.[y]?.[subj]?.[g];
+        return d ? d[metric] : null;
+      });
+      return {
+        label: '🔒 District Gr.'+g+(metric==='pass'?' Pass%':' Avg%'),
+        data, borderColor: GRADE_COLORS[g]+'99', backgroundColor: 'transparent',
+        borderDash:[6,3], borderWidth:2, pointRadius:3, pointStyle:'rectRot',
+        fill:false, tension:.3, _ref:true
+      };
+    });
+  }
+
+  const dsMathPass = [...schoolDatasets('pass'), ...districtLines('math','pass')];
+  const dsLangPass = [...schoolDatasetsL('pass'), ...districtLines('lang','pass')];
+  const dsMathAvg  = [...schoolDatasets('avg'),   ...districtLines('math','avg')];
+  const dsLangAvg  = [...schoolDatasetsL('avg'),  ...districtLines('lang','avg')];
+
+  mkLine('ch-tmp', yrs, dsMathPass, {dataLabels:false, refLines:true});
+  mkLine('ch-tlp', yrs, dsLangPass, {dataLabels:false, refLines:true});
+  mkLine('ch-tma', yrs, dsMathAvg,  {dataLabels:false, refLines:true});
+  mkLine('ch-tla', yrs, dsLangAvg,  {dataLabels:false, refLines:true});
+
+  buildSchoolsTable('tdt-tmp', yrs, dsMathPass);
+  buildSchoolsTable('tdt-tlp', yrs, dsLangPass);
+  buildSchoolsTable('tdt-tma', yrs, dsMathAvg);
+  buildSchoolsTable('tdt-tla', yrs, dsLangAvg);
+}
+
+/* District vs Province view: both sources on the same chart per grade */
+function _renderTrendBenchmark(yrs, grades){
+  // Colour pairs per grade: district = solid, province = dashed
+  // District uses the main grade colour; Province uses a lighter tint
+  const DIST_COLORS  = { 3:'#001489', 6:'#1b5c8a', 9:'#0d4f3c' };
+  const PROV_COLORS  = { 3:'#6b8fe8', 6:'#5b9ec9', 9:'#4caf85' };
+
+  function getDatasets(subj, metric){
+    const isPass = metric === 'pass';
+    const ds = [];
+    grades.forEach(g => {
+      // District line — solid
+      ds.push({
+        label: 'District Gr.'+g+(isPass?' Pass%':' Avg%'),
+        data: yrs.map(y => DISTRICT_LOCKED.OVERBERG?.[y]?.[subj]?.[g]?.[metric] ?? null),
+        borderColor: DIST_COLORS[g],
+        backgroundColor: DIST_COLORS[g],
+        borderDash: [],
+        borderWidth: 2.5,
+        pointRadius: 5,
+        pointStyle: 'circle',
+        fill: false, tension: .3
+      });
+      // Province line — dashed, lighter
+      ds.push({
+        label: 'Province Gr.'+g+(isPass?' Pass%':' Avg%'),
+        data: yrs.map(y => WC_MASTER?.[y]?.[subj]?.[g]?.[metric] ?? null),
+        borderColor: PROV_COLORS[g],
+        backgroundColor: PROV_COLORS[g],
+        borderDash: [6,3],
+        borderWidth: 2,
+        pointRadius: 4,
+        pointStyle: 'triangle',
+        fill: false, tension: .3
+      });
+    });
+    return ds;
+  }
+
+  mkLine('ch-tmp', yrs, getDatasets('math','pass'), {dataLabels:true, yTitle:'Pass %'});
+  mkLine('ch-tlp', yrs, getDatasets('lang','pass'), {dataLabels:true, yTitle:'Pass %'});
+  mkLine('ch-tma', yrs, getDatasets('math','avg'),  {dataLabels:true, yTitle:'Avg %'});
+  mkLine('ch-tla', yrs, getDatasets('lang','avg'),  {dataLabels:true, yTitle:'Avg %'});
+
+  // Populate data tables
+  buildBenchTable('tdt-tmp', yrs, getDatasets('math','pass'), grades);
+  buildBenchTable('tdt-tlp', yrs, getDatasets('lang','pass'), grades);
+  buildBenchTable('tdt-tma', yrs, getDatasets('math','avg'),  grades);
+  buildBenchTable('tdt-tla', yrs, getDatasets('lang','avg'),  grades);
+}
+
+/* ── TREND DATA TABLE HELPERS ── */
+function toggleTrendTable(id, btn){
+  const div = document.getElementById(id);
+  if(!div) return;
+  const open = div.style.display === 'none';
+  div.style.display = open ? 'block' : 'none';
+  btn.textContent = (open ? '▼ Hide' : '▶ Show') + ' data table';
+}
+
+// Build table for benchmark (district vs province) view
+function buildBenchTable(containerId, yrs, datasets, grades){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+
+  let html = '<table class="trend-dt"><thead><tr>';
+  html += '<th>Series</th>';
+  yrs.forEach(y => html += `<th>${y}</th>`);
+  html += '<th>Change</th>';
+  html += '</tr></thead><tbody>';
+
+  datasets.forEach(ds => {
+    const isDistrict = ds.label.startsWith('District');
+    const isProv     = ds.label.startsWith('Province');
+    const rowClass   = isDistrict ? 'tdt-dist' : isProv ? 'tdt-prov' : '';
+
+    // Compute year-on-year change (last two years)
+    const vals = ds.data;
+    const first = vals.find(v => v != null);
+    const last  = [...vals].reverse().find(v => v != null);
+    const v23 = vals[0], v24 = vals[1], v25 = vals[2];
+    const dev = (v25 != null && v24 != null) ? +(v25 - v24).toFixed(1) : null;
+    const devHtml = dev === null ? '–'
+      : `<span class="${dev>0?'tdt-dev-pos':dev<0?'tdt-dev-neg':'tdt-dev-neu'}">${dev>0?'+':''}${dev}</span>`;
+
+    function fmt(v){ return v != null ? v.toFixed(1)+'%' : '–'; }
+
+    html += `<tr class="${rowClass}">`;
+    html += `<td>${ds.label}</td>`;
+    yrs.forEach((_,i) => html += `<td>${fmt(vals[i])}</td>`);
+    html += `<td>${devHtml}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+// Build table for schools view
+function buildSchoolsTable(containerId, yrs, datasets){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+
+  // Separate school lines from reference lines
+  const schoolDS = datasets.filter(ds => ds._school);
+  const refDS    = datasets.filter(ds => ds._ref);
+
+  let html = '<table class="trend-dt"><thead><tr>';
+  html += '<th>School / Series</th>';
+  yrs.forEach(y => html += `<th>${y}</th>`);
+  html += '<th>Change</th>';
+  html += '</tr></thead><tbody>';
+
+  [...schoolDS, ...refDS].forEach(ds => {
+    const isRef = ds._ref;
+    const rowClass = isRef ? 'tdt-dist' : '';
+    const vals = ds.data;
+    const v24 = vals[1], v25 = vals[2];
+    const dev = (v25 != null && v24 != null) ? +(v25 - v24).toFixed(1) : null;
+    const devHtml = dev === null ? '–'
+      : `<span class="${dev>0?'tdt-dev-pos':dev<0?'tdt-dev-neg':'tdt-dev-neu'}">${dev>0?'+':''}${dev}</span>`;
+    function fmt(v){ return v != null ? v.toFixed(1)+'%' : '–'; }
+
+    html += `<tr class="${rowClass}">`;
+    html += `<td>${ds.label}</td>`;
+    yrs.forEach((_,i) => html += `<td>${fmt(vals[i])}</td>`);
+    html += `<td>${devHtml}</td>`;
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  el.innerHTML = html;
 }
 
 /* ── PROVINCIAL RANKING ── */
-
-// Locked provincial district pass % data (from official WCED reports)
 const PROV_RANK_DATA = {
   math: {
     3: [
@@ -2487,9 +3496,7 @@ function renderRanking(){
     const tbody = document.getElementById(tbodyId);
     if(!tbody) return;
 
-    // For each grade, compute ranks (excluding PROVINCE row)
     const grades = [3, 6, 9];
-    // Build rank maps: grade → {districtName → rank}
     const rankMap = {};
     grades.forEach(g => {
       const rows = (PROV_RANK_DATA[subj][g] || []).filter(r => !r.prov);
@@ -2498,7 +3505,6 @@ function renderRanking(){
       sorted.forEach((r, i) => { rankMap[g][r.d] = i + 1; });
     });
 
-    // Collect all distinct districts (union across all grades, province last)
     const allDistricts = [];
     const seen = new Set();
     grades.forEach(g => {
@@ -2507,7 +3513,6 @@ function renderRanking(){
       });
     });
     allDistricts.sort();
-    // Add PROVINCE at end
     allDistricts.push('PROVINCE');
 
     const OVERBERG_NAME = 'OVERBERG';
@@ -2543,9 +3548,6 @@ function renderRanking(){
   });
 }
 
-function gp_(a,b){return nn(a)&&nn(b)?+(a-b).toFixed(1):null}
-function gs(g){return g===null?'–':`${g>0?'+':''}${g}%`}
-
 /* ── CHART HELPERS ── */
 const CO={responsive:true,maintainAspectRatio:true,
   plugins:{legend:{labels:{color:'#4a5568',font:{size:10}}},tooltip:{backgroundColor:'#001489',titleColor:'#ffffff',bodyColor:'#c8d8f8',borderColor:'#1F497D',borderWidth:1}},
@@ -2553,11 +3555,72 @@ const CO={responsive:true,maintainAspectRatio:true,
 
 function mkBar(id,labels,datasets,opts){
   kl(id);const ctx=document.getElementById(id);if(!ctx)return;
-  CHARTS[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{...CO,indexAxis:opts.indexAxis||'x'}});
+  const showLabels = opts.dataLabels !== false;
+  CHARTS[id]=new Chart(ctx,{type:'bar',data:{labels,datasets},options:{
+    ...CO,
+    indexAxis:opts.indexAxis||'x',
+    plugins:{
+      ...CO.plugins,
+      datalabels: showLabels ? {
+        display: true,
+        color: '#fff',
+        font: {size: 9, weight: '700'},
+        anchor: 'center',
+        align: 'center',
+        formatter: v => v != null ? v.toFixed(1)+'%' : '',
+        clamp: true
+      } : {display: false}
+    }
+  }});
 }
-function mkLine(id,labels,datasets){
+function mkLine(id,labels,datasets,opts){
+  opts = opts || {};
   kl(id);const ctx=document.getElementById(id);if(!ctx)return;
-  CHARTS[id]=new Chart(ctx,{type:'line',data:{labels,datasets},options:{...CO,plugins:{...CO.plugins,legend:{labels:{color:'#4a5568',font:{size:9},boxWidth:10},position:'right'}}}});
+
+  // Determine if this is a benchmark (district/province) view — compact legend on bottom
+  const isBench = !datasets.some(ds => ds._school);
+  const legendPos = isBench ? 'bottom' : 'right';
+  const legendFont = isBench ? {size:10} : {size:9};
+  const legendBoxW = isBench ? 20 : 10;
+
+  const yAxisOpts = {
+    ...CO.scales.y,
+    ...(opts.yTitle ? {title:{display:true,text:opts.yTitle,color:'var(--mu)',font:{size:10}}} : {})
+  };
+
+  CHARTS[id]=new Chart(ctx,{
+    type:'line',
+    data:{labels, datasets: datasets.map(ds=>({
+      ...ds,
+      // honour per-dataset borderDash (dashed = avg lines)
+      borderDash: ds.borderDash || [],
+    }))},
+    options:{
+      ...CO,
+      plugins:{
+        ...CO.plugins,
+        legend:{
+          labels:{color:'#4a5568', font:legendFont, boxWidth:legendBoxW},
+          position: legendPos
+        },
+        datalabels: opts.dataLabels ? {
+          display: true,
+          color: ctx => ctx.dataset.borderColor || '#333',
+          backgroundColor: 'rgba(255,255,255,0.78)',
+          borderRadius: 3,
+          padding: {top:1,bottom:1,left:3,right:3},
+          font: {size:8, weight:'700'},
+          anchor: 'top',
+          align: 'top',
+          formatter: v => v != null ? v.toFixed(1)+'%' : '',
+        } : {display: false}
+      },
+      scales:{
+        ...CO.scales,
+        y: yAxisOpts
+      }
+    }
+  });
 }
 function mkDonut(id,labels,data){
   kl(id);const ctx=document.getElementById(id);if(!ctx)return;
@@ -2580,17 +3643,6 @@ function srt(id,col){
 }
 
 /* ── TABS ── */
-function showTab(n,btn){
-  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
-  document.getElementById(`tab-${n}`).classList.add('active');btn.classList.add('active');
-  const y=(document.getElementById('fy')||{}).value||'2025';
-  if(n==='overview')renderOverview(y);
-  if(n==='trends')renderTrends();
-  if(n==='items')renderItems_(IT_GR);
-  if(n==='classes')renderClasses_(CLS_GR);
-  if(n==='compare')renderRanking();
-}
 
 /* ── UTILS ── */
 const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
@@ -2731,8 +3783,8 @@ extract = function(txt,fname,file){
   try{ parseNumericAcrossYears(txt, s); }catch(e){ console.warn(e); }
   try{ parseNumericCategories(txt, s); }catch(e){ console.warn(e); }
 
-  // Single-class fallback: if no classes parsed but school-level pass exists,
-  // synthesise GRnA using school-level + trend data.
+  // If we have classes from the enhanced parser, keep them
+  // Otherwise try to synthesize a single class from school-level data
   if(s.classes.length === 0 && s.grade && s.math && s.math.pass !== null){
     const g = String(s.grade);
     const t = s.mTrend || {};
@@ -2753,281 +3805,58 @@ extract = function(txt,fname,file){
 
 /* ================= END CONSOLIDATED PARSER ================= */
 
-/* ================= ADD-ON: WCED Class Parsing ================= */
-function parseClassesV2(txt, grade){
-  // pdfjs extracts PDF tables ROW-BY-ROW (all columns on one line).
-  //
-  // LAYOUT 1 — "Graadvlak prestasie per klas" table (multi-year, preferred):
-  //   "Graadvlak prestasie per klas vir 2025"
-  //   "Graad 7 Graad 8 Graad 9"
-  //   "Klas Slaag-% Gemid-% Slaag-% Gemid-% Slaag-% Gemid-%"
-  //   "GR9 9A 23.5 32.5 23.5 34.0 25.5 36.5"
-  //   "GR9 9B 10.9 19.6 10.9 22.6 4.3 22.3"
-  //
-  // LAYOUT 2 — "Prestasie per klas in Wiskunde" summary (single-year fallback):
-  //   "Prestasie per klas in Wiskunde"
-  //   "9A 9B 9C 9D"              ← class names on one line
-  //   "Slaag-% 25.5 4.3 2.7 5.4" ← values on same line as header
-  //   "Gemid-% 36.5 22.3 25.6 23.6"
-  //
-  //   OR for single-class schools:
-  //   "Slaag-%"  (header line)
-  //   "Gemid-%"  (header line)
-  //   "3"        (class name = grade number → treat as "A")
-  //   "53.8"     (pass value)
-  //   "51.9"     (avg value)
-
-  const g = String(grade||'').trim();
-  if(!g) return [];
-  const toNum = s => { const n = parseFloat(s); return isNaN(n) ? null : n; };
-
-  // Helper: extract letter/digit suffix from a class label token for grade g.
-  // Suffixes can be letters (A, B, C, E) or digits (1, 2, 3) — schools name classes both ways.
-  // Returns an object {letter, displayName} where displayName preserves the original label.
-  const getLetter = token => {
-    let m;
-    // "GR9 9A", "GR9 9B" — GR-prefix + grade + space + grade + letter
-    m = token.match(new RegExp('GR\\s*'+g+'\\s+'+g+'([A-Z])\\b','i'));
-    if(m) return m[1].toUpperCase();
-    // "GR3 1", "GR3 2", "GR3 E", "GR9A", "GR9 B" — GR-prefix + grade + optional space + letter or digit
-    m = token.match(new RegExp('GR\\s*'+g+'\\s*([A-Z0-9])\\b','i'));
-    if(m){ const s = m[1].toUpperCase(); if(s !== g) return s; }
-    // bare "9A", "9B"
-    m = token.match(new RegExp('^'+g+'([A-Z])$'));
-    if(m) return m[1].toUpperCase();
-    // single-class: bare grade "3","6","9" or "GR3","GR 6" → use "A"
-    if(new RegExp('^'+g+'$').test(token)) return 'A';
-    if(new RegExp('^GR\\s*'+g+'$','i').test(token)) return 'A';
-    // "GR3 3", "GR6 GR 6" — GR-prefix + grade + space + grade (no letter/digit)
-    if(new RegExp('^GR\\s*'+g+'\\s+'+g+'$','i').test(token)) return 'A';
-    // bare letter "A","B","C","E" or digit "1","2" — from Prestasie per klas summary line
-    // Exclude if it equals the grade number itself
-    if(/^[A-Z0-9]$/.test(token) && token !== g) return token;
-    // MULTI-grade combined class (e.g. "MULTI 2B AND 3B", "MULTI 2B AND3B") → use "MULTI" as sentinel
-    if(/^MULTI\b/i.test(token)) return 'MULTI';
-    return null;
-  };
-
-  // Helper to build a display name from a label string
-  const getDisplayName = (labelStr, letter) => {
-    // For MULTI classes, keep the full original label
-    if(letter === 'MULTI') return labelStr.trim();
-    // For standard classes, use "GRnX" convention
-    return 'GR' + g + letter;
-  };
-
-  // ── PRIMARY: "Graadvlak prestasie per klas" table ──
-  // pdfjs gives each data row as one line: "GR9 9A 23.5 32.5 23.5 34.0 25.5 36.5"
-  // Columns are: Klas | Slaag-%(Gr7) | Gemid-%(Gr7) | Slaag-%(Gr8) | Gemid-%(Gr8) | Slaag-%(Gr9) | Gemid-%(Gr9)
-  // Grade column order is given by the header line "Graad 7 Graad 8 Graad 9"
-  const glIdx = txt.search(/Graadvlak\s+prestasie\s+per\s+klas|Grade\s+level\s+performance\s+by\s+class/i);
-  console.log('[parseClassesV2] grade='+g+' glIdx='+glIdx+' textLen='+txt.length);
-  if(glIdx > -1){
-    // Take enough text to cover the whole table
-    const seg = txt.slice(glIdx, glIdx + 2000);
-    const lines = seg.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-
-    // Find the header line "Graad 7 Graad 8 Graad 9" to know column order
-    let gradeOrder = [];  // e.g. [7, 8, 9]
-    let dataLineStart = 0;
-    for(let i=0; i<lines.length; i++){
-      const gradeMatches = [...lines[i].matchAll(/Graad\s+(\d+)|Grade\s+(\d+)/gi)];
-      if(gradeMatches.length >= 2){
-        gradeOrder = gradeMatches.map(m => parseInt(m[1]||m[2]));
-        dataLineStart = i + 1; // data starts after the header (possibly after "Klas Slaag-% ..." line)
-        break;
-      }
-    }
-    // Skip the "Klas Slaag-% Gemid-% ..." column-header line if present
-    if(dataLineStart < lines.length && /Klas|Class/i.test(lines[dataLineStart])){
-      dataLineStart++;
-    }
-
-    // How many numeric columns per row? 2 per grade (Slaag + Gemid)
-    const numGrades = gradeOrder.length || 3; // default 3 grade columns
-    const numCols = numGrades * 2;
-
-    // Find which column index corresponds to the current grade
-    // gradeOrder = [7,8,9] → grade 9 is index 2 → Slaag col = 2*2=4, Gemid col = 4+1=5
-    const gOrderIdx = gradeOrder.indexOf(parseInt(g));
-    // If not found, assume last column group = current grade
-    const gColIdx = gOrderIdx > -1 ? gOrderIdx : (numGrades - 1);
-
-    const result = [];
-    const seen = new Set();
-    // Also collect sidebar text patterns to skip
-    for(let i=dataLineStart; i<lines.length; i++){
-      const line = lines[i];
-      // Stop at next major section or footer
-      if(/^OBIS|^Skoolnaam|^OBISNr/i.test(line)) break;
-      // Skip obvious sidebar/description lines (no numbers, or only small numbers like "7,")
-      if(!/\d+\.\d+/.test(line) && !/^GR/i.test(line)) continue;
-
-      // Tokenise the line
-      const tokens = line.split(/\s+/);
-      if(tokens.length < 3) continue;
-
-      // First token(s) form the class label — greedily consume until we hit a number
-      let labelTokens = [];
-      let numStart = 0;
-      for(let t=0; t<tokens.length; t++){
-        if(/^\d+\.\d+$/.test(tokens[t])){ numStart = t; break; }
-        labelTokens.push(tokens[t]);
-        numStart = t+1;
-      }
-      const labelStr = labelTokens.join(' ');
-      const letter = getLetter(labelStr);
-
-      const nums = tokens.slice(numStart).map(toNum).filter(v=>v!==null);
-      if(nums.length < 2) continue;
-
-      // Unrecognised label but correct column count = combined/multi class → treat as A
-      const effectiveLetter = letter !== null ? letter
-        : (nums.length === numGrades * 2 ? 'A' : null);
-      if(effectiveLetter === null) continue;
-
-      // Extract values for the current grade's columns
-      const slaagCol = gColIdx * 2;
-      const gemidCol = gColIdx * 2 + 1;
-
-      const displayName = getDisplayName(labelStr, effectiveLetter);
-      // Use displayName as dedup key for MULTI classes, otherwise use GRnX key
-      const dedupKey = effectiveLetter === 'MULTI' ? displayName : ('GR'+g+effectiveLetter);
-      if(seen.has(dedupKey)) continue;
-      seen.add(dedupKey);
-
-      result.push({
-        name:   displayName,
-        g1Pass: nums[0]  ?? null,   // first grade Slaag
-        g1Avg:  nums[1]  ?? null,   // first grade Gemid
-        g2Pass: nums[2]  ?? null,   // second grade Slaag
-        g2Avg:  nums[3]  ?? null,   // second grade Gemid
-        gPass:  nums[slaagCol] ?? null,  // current grade Slaag
-        gAvg:   nums[gemidCol] ?? null,  // current grade Gemid
-      });
-    }
-
-    if(result.length > 0){
-      result.sort((a,b)=>a.name.localeCompare(b.name));
-      console.log('[parseClassesV2] PRIMARY OK → '+result.length+' classes: '+result.map(c=>c.name).join(','));
-      return result;
-    }
+// ===== Export ALL + BENCH as downloadable data.json =====
+function exportDataJSON(){
+  try{
+    const payload = JSON.stringify({ ALL, BENCH }, null, 2);
+    const blob = new Blob([payload], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }catch(e){
+    alert('Export failed: ' + e.message);
   }
-
-  // ── FALLBACK: "Prestasie per klas in Wiskunde" summary table ──
-  // pdfjs layout A (multi-class): class names on one line, then "Slaag-% val val val" on next
-  //   "9A 9B 9C 9D"
-  //   "Slaag-% 25.5 4.3 2.7 5.4"
-  //   "Gemid-% 36.5 22.3 25.6 23.6"
-  //
-  // pdfjs layout B (single-class, column-by-column): separate lines
-  //   "Slaag-%"  "Gemid-%"  "3"  "53.8"  "51.9"
-  //
-  // Restrict to Wiskunde section only (not Taal).
-  const perfIdx = txt.search(/Prestasie\s+per\s+klas\s+in\s+Wiskunde|Performance\s+by\s+class\s+in\s+Mathematics/i);
-  if(perfIdx > -1){
-    const nextSec = txt.slice(perfIdx+1).search(/Prestasie\s+per\s+klas\s+in\s+(?:Taal|Language)|Graadvlak\s+prestasie|Performance\s+by\s+class\s+in\s+Language/i);
-    const seg = txt.slice(perfIdx, nextSec > -1 ? perfIdx+1+nextSec : perfIdx+1500);
-    const lines = seg.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-
-    // Look for a line that is purely class labels for this grade
-    // e.g. "9A 9B 9C 9D" or "3" or "GR 3"
-    let classNames = [];
-    let slaagVals = [], gemidVals = [];
-
-    for(let i=0; i<lines.length; i++){
-      const line = lines[i];
-      // Is this a "Slaag-% val val val" line?
-      if(/^Slaag-?%|^Pass\s*%/i.test(line)){
-        const nums = line.split(/\s+/).slice(1).map(toNum).filter(v=>v!==null);
-        if(nums.length > 0) slaagVals = nums;
-        continue;
-      }
-      if(/^Gemid-?%|^Avg\s*%/i.test(line)){
-        const nums = line.split(/\s+/).slice(1).map(toNum).filter(v=>v!==null);
-        if(nums.length > 0) gemidVals = nums;
-        continue;
-      }
-      // Is this a class-labels line? Tokens should all be class identifiers for grade g
-      // Also handle lines like "MULTI 2B AND 3B A" where MULTI is a multi-word label
-      const tokens = line.split(/\s+/);
-      // Check for MULTI prefix pattern: "MULTI ... A", "MULTI ... B", etc.
-      if(/^MULTI\b/i.test(line)){
-        // Extract single-letter class names at the end: e.g. "MULTI 2B AND 3B A" → [MULTI_label, "A"]
-        const lastToken = tokens[tokens.length-1];
-        const lastLetter = getLetter(lastToken);
-        if(lastLetter !== null && lastLetter !== 'MULTI'){
-          // Everything before the last token is the MULTI class name
-          const multiLabel = tokens.slice(0, tokens.length-1).join(' ');
-          classNames = [multiLabel, 'GR'+g+lastLetter];
-          continue;
-        }
-        // Just a MULTI class alone on this line
-        classNames = [line.trim()];
-        continue;
-      }
-      const letters = tokens.map(t => getLetter(t)).filter(l=>l!==null);
-      if(letters.length > 0 && letters.length === tokens.length){
-        classNames = letters.map((l,i) => l === 'MULTI' ? tokens[i] : ('GR'+g+l));
-        continue;
-      }
-    }
-
-    // If Slaag/Gemid values found but no class names recognised (e.g. MULTI class),
-    // fall back to single class 'A'
-    if(classNames.length === 0 && slaagVals.length > 0){
-      classNames = slaagVals.map((_,i) => 'GR'+g+(slaagVals.length === 1 ? 'A' : String.fromCharCode(65+i)));
-    }
-
-    // If we found inline Slaag/Gemid values and class names, use them
-    if(classNames.length > 0 && slaagVals.length > 0){
-      const result = classNames.map((cls,i) => ({
-        name: cls, g1Pass:null, g1Avg:null, g2Pass:null, g2Avg:null,
-        gPass: slaagVals[i] ?? null,
-        gAvg:  gemidVals[i] ?? null,
-      })).sort((a,b)=>a.name.localeCompare(b.name));
-      console.log('[parseClassesV2] FALLBACK-A OK → '+result.length+' classes: '+result.map(c=>c.name).join(','));
-      return result;
-    }
-
-    // Layout B: column-by-column (pdfminer style — "Slaag-%\nGemid-%\n3\n53.8\n51.9")
-    // Slaag/Gemid are on separate lines with no values; class name and values follow
-    const slaagLine = lines.findIndex(l => /^Slaag-?%$|^Pass\s*%$/i.test(l));
-    if(slaagLine > -1){
-      const afterSlaag = lines.slice(slaagLine);
-      // Skip header tokens, collect class+value triplets
-      let dataStart = 0;
-      while(dataStart < afterSlaag.length && /Slaag-?%|Gemid-?%|Pass\s*%|Avg\s*%/i.test(afterSlaag[dataStart])) dataStart++;
-      const classes = []; const seenB = new Set();
-      let i = dataStart;
-      while(i < afterSlaag.length){
-        const letter = getLetter(afterSlaag[i]);
-        if(letter !== null){
-          const cls = letter === 'MULTI' ? afterSlaag[i] : ('GR'+g+letter);
-          const gPass = toNum(afterSlaag[i+1]);
-          const gAvg  = toNum(afterSlaag[i+2]);
-          if(!seenB.has(cls)){
-            seenB.add(cls);
-            classes.push({name:cls, g1Pass:null, g1Avg:null, g2Pass:null, g2Avg:null, gPass, gAvg});
-          }
-          i += 3;
-        } else { i++; }
-      }
-      if(classes.length > 0){
-        classes.sort((a,b)=>a.name.localeCompare(b.name));
-        console.log('[parseClassesV2] FALLBACK-B OK → '+classes.length+' classes: '+classes.map(c=>c.name).join(','));
-        return classes;
-      }
-    }
-  }
-
-  console.log('[parseClassesV2] grade='+g+' → NO CLASSES FOUND');
-  return [];
 }
-/* ================= END ADD-ON ================= */
+// =====================================================
+
+// ===== Load central data.json if present (staff view) =====
+async function tryLoadCentralData(){
+  try{
+    const res = await fetch('./data.json', {cache:'no-cache'});
+    if(!res.ok) return false;
+    const payload = await res.json();
+    if(!payload || !Array.isArray(payload.ALL) || !payload.ALL.length) return false;
+    ALL = payload.ALL;
+    BENCH = payload.BENCH || {district:{}, circuit:{}};
+    FLT = [...ALL];
+    try{ populate(); }catch(e){ console.warn('populate() error on central load:', e); }
+    try{ renderAll('2025'); }catch(e){ console.warn('renderAll() error on central load:', e); }
+    lockAllData();
+    sec('dashboard');
+    const uniqueCount = new Set(ALL.map(s => s.emis && s.emis.trim() ? 'EMIS:'+s.emis.trim() : 'NAME:'+(s.name||s.fname||'?'))).size;
+    try{ document.getElementById('sbadge').textContent = uniqueCount+' school'+(uniqueCount!==1?'s':'') + ' · central data'; }catch(e){}
+    try{ document.getElementById('rbtn').style.display='block'; }catch(e){}
+    return true;
+  }catch(e){
+    console.info('No central data.json found — upload mode active.');
+    return false;
+  }
+}
+// ==========================================================
 
 // ===== Restore persisted dataset on load =====
 window.addEventListener('DOMContentLoaded', async () => {
+  // 1. Try to load central data.json from Netlify first
+  const central = await tryLoadCentralData();
+  if(central) return;
+
+  // 2. Fall back to locally stored IndexedDB dataset
+  if (!window.WCED_RESTORE) return;
   const stored = await loadDataset();
   if(stored && stored.ALL && Array.isArray(stored.ALL) && stored.ALL.length){
     ALL = stored.ALL;
@@ -3044,5 +3873,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ============================================
 
 </script>
+
+<footer style="border-top:2px solid #001489;padding:.75rem 1.75rem;background:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;font-family:'Century Gothic',CenturyGothic,sans-serif;">
+  <span style="font-size:.72rem;color:#4a5568;">Created &amp; owned by <strong style="color:#0d1b3e;font-weight:700;">Jandré Gerber</strong> &nbsp;·&nbsp; WCED Systemic Testing Programme – Analysis Dashboard</span>
+  <span style="font-size:.68rem;color:#8a95a8;font-style:italic;">© 2025 Jandré Gerber. All rights reserved.</span>
+</footer>
+
 </body>
 </html>
